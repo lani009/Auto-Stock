@@ -29,6 +29,7 @@
       <artifactId>slack-api-client</artifactId>
       <version>1.4.0</version>
     </dependency>
+    <!-- https://mvnrepository.com/artifact/com.jacob/jacob -->
 
   </dependencies>
 
