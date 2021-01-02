@@ -3,3 +3,4 @@ target/
 *.bat
 settings.json
 __pycache__/
+.flake8
