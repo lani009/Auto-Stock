@@ -10,6 +10,7 @@ class Main():
         self.app = QApplication(sys.argv)
         self.kiwoom = Kiwoom()
         self.app.exec_()
+        print("hi")
 
 
 if __name__ == "__main__":

@@ -73,6 +73,10 @@ class Kiwoom(QAxWidget):
 
             print("계좌평가잔고내역요청 싱글데이터: %s - %s - %s", (total_buy_money, total_profit_loss_money, total_profit_loss_money))
 
+            rows = self.dynamicCall("GetRepeatCnt(QString, QString)", sTrCode, sRQName)
+            print(rows)
+            self.detail_account_info_event_loop.exit()
+
     def stop_screen_cancel(self, sScrNo=None):
         self.dynamicCall("DisconnectRealData(QString)", sScrNo)
 

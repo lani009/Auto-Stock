@@ -1,0 +1,2 @@
+class AlgoritmRunner():
+    pass
