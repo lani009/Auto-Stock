@@ -1,4 +1,7 @@
-class Index():
+from PyQt5.QtCore import QThread
+
+
+class Index(QThread):
     '''
     주식 총괄 메인 클래스
     '''
@@ -7,8 +10,8 @@ class Index():
     def __init__():
         pass
 
-    def main_runner():
+    def run():
         '''
-        메인 메소드
+        메인
         '''
         pass
