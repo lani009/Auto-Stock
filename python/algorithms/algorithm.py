@@ -1,6 +1,8 @@
 from abc import abstractmethod, ABCMeta
 from algorithms.condition import Condition
 from entity.stock import Stock
+from algorithms.signal.signal import Signal
+from request.enum.stockEnum import OfferStock
 
 
 class Algorithm(metaclass=ABCMeta):
@@ -14,15 +16,21 @@ class Algorithm(metaclass=ABCMeta):
     '''
     __stock: Stock  # 보유 주식
     __money: int    # 예수금
+    __signal: Signal    # 시그널
     __selling_condition: Condition  # 매도 조건
     __buying_condition: Condition   # 매수 조건
 
-    def __init__(self):
-        pass
+    def __init__(self, stock: Stock, buying_condition: Condition, selling_condition: Condition):
+        self.__stock = stock
+        self.__buying_condition = buying_condition
+        self.__selling_condition = selling_condition
+        self.__signal = Signal()
+        self.reg_signal(buying_condition, OfferStock.BUYING)
+        self.reg_signal(selling_condition, OfferStock.SELLING)
 
     @abstractmethod
     @staticmethod
-    def filter_list(self):
+    def filter_list(self) -> list:
         '''
         거래 대상 주식 필터링
         '''
@@ -41,3 +49,9 @@ class Algorithm(metaclass=ABCMeta):
         되도록이면 매도하되, 이건 좀 아니다 싶으면 홀딩한다.
         '''
         pass
+
+    def reg_signal(self, condition: Condition, callback, offer):
+        '''
+        시그널 등록 위임 메소드
+        '''
+        self.__signal.attach_signal(condition, offer)

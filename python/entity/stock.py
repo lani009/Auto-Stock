@@ -1,4 +1,5 @@
 from entity.candle import Candle
+from entity.candle import CandleChart
 
 
 class Stock():
@@ -16,5 +17,12 @@ class Stock():
     def get_current_data(self):
         pass
 
-    def get_candle(self) -> Candle:
+    def get_candle(self, tick: int) -> CandleChart:
+        '''
+        봉 차트를 CandleChart 형태로 반환한다.
+
+        attribute
+        ---------
+        tick: 틱
+        '''
         pass

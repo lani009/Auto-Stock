@@ -35,6 +35,14 @@
       <artifactId>qt-platform</artifactId>
       <version>5.15.0-1.5.4</version>
     </dependency>
+    <!-- https://mvnrepository.com/artifact/com.trolltech.qt/qtjambi -->
+    <!-- https://mvnrepository.com/artifact/org.bytedeco/qt -->
+    <dependency>
+      <groupId>org.bytedeco</groupId>
+      <artifactId>qt</artifactId>
+      <version>5.15.0-1.5.4</version>
+    </dependency>
+
   </dependencies>
 
   <build>
