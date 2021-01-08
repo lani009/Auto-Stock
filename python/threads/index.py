@@ -5,6 +5,7 @@ from algorithms.impl.fifteen_candle import FifteenCandel
 
 import time
 
+
 class Index(QThread):
     '''
     주식 총괄 메인 클래스

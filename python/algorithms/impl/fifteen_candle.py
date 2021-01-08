@@ -15,7 +15,7 @@ class FifteenCandel_BuyingCondition(Condition):
     def __init__(self):
         super().__init__()
 
-    def condition(self):
+    def condition_test(self):
         '''
         Condition 클래스의 condition 메소드를 오버라이드
         '''
@@ -26,7 +26,7 @@ class FifteenCandel_sellingCondition(Condition):
     def __init__(self):
         super().__init__()
 
-    def condition(self):
+    def condition_test(self):
         '''
         Condition 클래스의 condition 메소드를 오버라이드
         '''
