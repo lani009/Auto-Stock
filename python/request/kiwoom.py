@@ -26,10 +26,10 @@ class Kiwoom(QAxWidget):
         self.__global_eventloop.exec_()
         return self.__tr_data_temp
 
-    def set_input_values(self, input_value: dict):
+    def _set_input_values(self, input_value: dict):
         for k, v in input_value.items():
             self.dynamicCall("SetInputValue(QString, QString)", k, v)
 
-    def tr_data_slot(self):
+    def _tr_data_slot(self):
         self.__tr_data_temp = None
         self.__global_eventloop.exit()

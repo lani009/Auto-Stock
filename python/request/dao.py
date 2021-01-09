@@ -10,7 +10,7 @@ class Dao():
     키움 API Data Access Object 클래스
 
     '''
-    __request_queue = queue.Queue(maxsize=1)
+    __request_queue = queue.Queue(maxsize=1)    # size를 1로 막아두어, 하나 이상의 요청이 들어올 경우, blocking
     __kiwoom_obj: Kiwoom
 
     def __new__(cls, *args, **kwargs):
@@ -47,7 +47,7 @@ class Dao():
 
         SetInputValue("거래량구분", "입력값 3");
         '''
-        self.__request_queue.put([input_value, sRQName, sTrCode, nPrevNext, sScreenNo])
+        self.__request_queue.put(0)
         self.__kiwoom_obj.get_tr_data(input_value, sRQName, sTrCode, nPrevNext, sScreenNo)
         self.__request_queue.get()
         pass
@@ -62,12 +62,12 @@ class Dao():
 
         tick: 틱 단위
         '''
-        self.__request_queue.put([stock, unit, tick])
+        self.__request_queue.put(0)
         pass
 
-    def reg_slot(self, callback, stock: Stock):
+    def reg_realtime_slot(self, callback, stock: Stock):
         '''
         해당 주식의 실시간 데이터 슬롯을 등록한다.
         '''
-        self.__request_queue.put()
+        self.__request_queue.put(0)
         pass

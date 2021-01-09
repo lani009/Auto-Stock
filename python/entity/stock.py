@@ -1,4 +1,3 @@
-from entity.candle import Candle
 from entity.candle import CandleChart
 from request.enum.stockEnum import CandleUnit
 

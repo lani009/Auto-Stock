@@ -23,7 +23,7 @@ class Signal(QThread):
         '''
         시그널 이벤트 등록
         '''
-        Dao().reg_slot(self.real_data_slot, self.stock)
+        Dao().reg_slot(self.realtime_data_slot, self.stock)
         self.__condition_list.append([
             condition, offer
         ])
@@ -34,7 +34,7 @@ class Signal(QThread):
     def get_signal_list(self):
         pass
 
-    def real_data_slot(self, sScrNo: str, sRQName: str, sTrCode: str, sRecordName: str, sPrevNext: str):
+    def realtime_data_slot(self, sScrNo: str, sRQName: str, sTrCode: str, sRecordName: str, sPrevNext: str):
         '''
         real time data 이벤트 슬롯
 
