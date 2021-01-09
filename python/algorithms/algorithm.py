@@ -22,11 +22,12 @@ class Algorithm(metaclass=ABCMeta):
 
     def __init__(self, stock: Stock, buying_condition: Condition, selling_condition: Condition):
         self.__stock = stock
-        self.__buying_condition = buying_condition
-        self.__selling_condition = selling_condition
+        self.__buying_condition = buying_condition()
+        self.__selling_condition = selling_condition()
         self.__signal = Signal()
-        self.reg_signal(buying_condition, OfferStock.BUYING)
-        self.reg_signal(selling_condition, OfferStock.SELLING)
+
+        self.reg_signal(self.__buying_condition, OfferStock.BUYING)
+        self.reg_signal(self.__selling_condition, OfferStock.SELLING)
 
     @abstractmethod
     @staticmethod

@@ -2,13 +2,16 @@ from PyQt5.QtCore import QThread
 from algorithms.condition import Condition
 from request.dao import Dao
 from request.enum.stockEnum import OfferStock
+from entity.stock import Stock
 
 
 class Signal(QThread):
     '''
     시그널 감지 클래스
     '''
+    __refresh_time = 1  # 조건 새로고침 주기 단위(초)
     __condition_list = []
+    stock: Stock
 
     def __init__(self):
         pass
@@ -20,7 +23,7 @@ class Signal(QThread):
         '''
         시그널 이벤트 등록
         '''
-        Dao().reg_slot(self.real_data_slot)
+        Dao().reg_slot(self.realtime_data_slot, self.stock)
         self.__condition_list.append([
             condition, offer
         ])
@@ -31,7 +34,7 @@ class Signal(QThread):
     def get_signal_list(self):
         pass
 
-    def real_data_slot(self, sScrNo: str, sRQName: str, sTrCode: str, sRecordName: str, sPrevNext: str):
+    def realtime_data_slot(self, sScrNo: str, sRQName: str, sTrCode: str, sRecordName: str, sPrevNext: str):
         '''
         real time data 이벤트 슬롯
 
@@ -49,6 +52,9 @@ class Signal(QThread):
         self.run_condition_trade()
 
     def run_condition_trade(self, index: int, realtime_data):
+        '''
+        매도 매수 조건이 만족될 경우, 거래를 진행시킨다.
+        '''
         condition_value, offer = self.check_condition(index, realtime_data)
         if condition_value:
             # 조건 충족
@@ -59,10 +65,10 @@ class Signal(QThread):
                 # 매도 조건일 때
                 Dao().sell_stock()
 
-    def check_condition(self, index: int, realtime_data) -> bool:
+    def check_condition(self, index: int, realtime_data) -> (bool, OfferStock):
         '''
-        조건 판별
+        매도, 매수 조건에 맞는지 판별
         '''
         condition: Condition
         condition = self.__condition_list[index][0]
-        return (condition.condition(realtime_data), self.__condition_list[index][1]
+        return (condition.condition_test(realtime_data), self.__condition_list[index][1])

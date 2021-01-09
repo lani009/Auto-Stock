@@ -7,27 +7,25 @@ class FifteenCandel(Algorithm):
     '''
     15분봉 매매법
     '''
-    def __init__(self, stock: Stock, buying_condition: Condition, selling_condition: Condition):
-        super().__init__(stock, buying_condition, selling_condition)
+    def __init__(self, stock: Stock):
+        super().__init__(stock, FifteenCandel.FifteenCandel_BuyingCondition, FifteenCandel.FifteenCandel_sellingCondition)
 
+    class FifteenCandel_BuyingCondition(Condition):
+        def __init__(self):
+            super().__init__()
 
-class FifteenCandel_BuyingCondition(Condition):
-    def __init__(self):
-        super().__init__()
+        def condition_test(self):
+            '''
+            Condition 클래스의 condition 메소드를 오버라이드
+            '''
+            pass
 
-    def condition(self):
-        '''
-        Condition 클래스의 condition 메소드를 오버라이드
-        '''
-        pass
+    class FifteenCandel_sellingCondition(Condition):
+        def __init__(self):
+            super().__init__()
 
-
-class FifteenCandel_sellingCondition(Condition):
-    def __init__(self):
-        super().__init__()
-
-    def condition(self):
-        '''
-        Condition 클래스의 condition 메소드를 오버라이드
-        '''
-        pass
+        def condition_test(self):
+            '''
+            Condition 클래스의 condition 메소드를 오버라이드
+            '''
+            pass
