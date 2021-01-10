@@ -17,12 +17,15 @@ class Kiwoom(QAxWidget):
 
     __tr_data_temp = None
     __global_eventloop = QEventLoop()
+    __condition_list = None
+    ___found_code_list = None
+
 
     def __init__(self):
         self.OnReceiveTrData.connect(self.tr_data_slot)
-        self.condition_signal()
         self.OnReceiveConditionVer.connect(self.condition_slot)
         self.OnReceiveTrCondition.connect(self.condition_tr_slot)
+        self.condition_signal()
 
     def get_tr_data(self, input_value: dict, sRQName: str, sTrCode: str, nPrevNext: int, sScreenNo: str):
         self.set_input_values(input_value)
@@ -39,32 +42,40 @@ class Kiwoom(QAxWidget):
         self.__global_eventloop.exit()
 
 ###########################################################################################
-    def condition_slot(self, lRet, sMsg, ConditionName):
-        '''
-        조건 검색 목록 가져온 후 조건 검색 요청
-        '''
-        condition_name_list = self.dynamicCall("GetConditionNameList()")
+    def condition_signal(self):
+        self.dynamicCall("GetConditionLoad()")
 
-        condition_name_list = condition_name_list.split(";")[:-1]
+    def get_condition_list(self):
+
+        condition_name_list = self.dynamicCall("GetConditionNameList()")
+        self.__condition_list = condition_name_list
+        return self.__condition_list
+
+
+    def _condition_slot(self, lRet, sMsg):
+        
+        self.get_condition_list()
+
+
+    def get_condition_stock_code(ConditionName):
+
+        condition_name_list = __condition_list.split(";")[:-1]
 
         for unit_condition in condition_name_list:
             index = unit_condition.split("^")[0]
             index = int(index)
-            condition_name = unit_condition.split("^")[1]
-            if condition_name == ConditionName:
+            condition_name_list = unit_condition.split("^")[1]
+            if condition_name_list == ConditionName:
                 self.dynamicCall("SendCondition(QString, QString, int, int)",
-                                 "0156", condition_name, index, 0)  # 조회요청 + 실시간 조회print("조회 성공여부 %s " % ok)
+                                 "0156", ConditionName, index, 0)  # 조회요청 + 실시간 조회print("조회 성공여부 %s " % ok)
 
-    def condition_signal(self):
-        self.dynamicCall("GetConditionLoad()")
 
-    # 나의 조건식에 해당하는 종목코드 받기
-    def condition_tr_slot(self, sScrNo, strCodeList, strConditionName, index, nNext):
+    def _condition_tr_slot(self, sScrNo, strCodeList, strConditionName, index, nNext):
         print("화면번호: %s, 종목코드 리스트: %s, 조건식 이름: %s, 조건식 인덱스: %s, 연속조회: %s" % (sScrNo, strCodeList, strConditionName, index, nNext))
-
         code_list = strCodeList.split(";")[:-1]
         print("코드 종목 \n %s" % code_list)
-        return code_list
+
+
 
 
 

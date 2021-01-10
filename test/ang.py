@@ -56,6 +56,9 @@ class ang(QAxWidget):
         self.OnReceiveTrCondition.connect(self.condition_tr_slot)
         # self.OnReceiveRealCondition.connect(self.condition_real_slot)
 
+    def get_condition_list(self):
+        pass
+
     def condition_slot(self, ConditionName):
 
         condition_name_list = self.dynamicCall("GetConditionNameList()")
@@ -81,3 +84,18 @@ class ang(QAxWidget):
         code_list = strCodeList.split(";")[:-1]
         print("코드 종목 \n %s" % code_list)
         return code_list
+
+
+class Main():
+    def __init__(self):
+        print("Main() start")
+
+        self.app = QApplication(sys.argv)
+        kiwoom = ang()
+        kiwoom.ang()
+        self.app.exec_()
+        print("hi")
+
+
+if __name__ == "__main__":
+    Main()

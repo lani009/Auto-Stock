@@ -13,14 +13,14 @@ class Fifteen_Pivot2(Algorithm):
 
     def __init__(self, stock: Stock):
         super().__init__(stock, Fifteen_Pivot2.Fifteen_Pivot2_BuyingCondition, Fifteen_Pivot2.Fifteen_Pivot2_sellingCondition)
-
+        self.dao = Dao()
     class Fifteen_Pivot2_BuyingCondition(Condition):
         def __init__(self):
             super().__init__()
 
         def filter_list(self) -> [Stock, ...]:
-            stock_box = Dao.put_found_stock("")
-                
+            stock_box = self.dao.put_found_stock()
+
         def condition_test(self):
             '''
             Condition 클래스의 condition 메소드를 오버라이드

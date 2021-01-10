@@ -72,7 +72,7 @@ class Dao():
         self.__request_queue.put(0)
         pass
 
-    def put_found_stock(self, eqName: str) -> [Stock, ...]:
+    def request_found_stock(self, eqName: str) -> [Stock, ...]:
         '''
         종목검색을 하는 메서드
         '''
