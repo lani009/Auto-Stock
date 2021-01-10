@@ -17,7 +17,7 @@ class AlgoritmRunner():
         '''
         pass
 
-    def stop(self):
+    def stop(self, algorithm: Algorithm):
         '''
         특정 알고리즘만 종료
         '''
@@ -27,7 +27,7 @@ class AlgoritmRunner():
         '''
         해당 알고리즘이 작동할 수 있도록, 등록한다.
         '''
-        algorithm_param = algorithm.__class__()        # 알고리즘 객체 생성
+        algorithm_param = algorithm()        # 알고리즘 객체 생성
         self.__algorithm_list.append(algorithm_param)  # 알고리즘 리스트에 추가
 
     def get_algorithm_list(self) -> list:

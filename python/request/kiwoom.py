@@ -77,6 +77,8 @@ class Kiwoom(QAxWidget):
 
 
 
+    def get_condition_list(self):
+        return self.__condition_name_list
 
 
 

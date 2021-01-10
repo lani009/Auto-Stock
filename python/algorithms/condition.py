@@ -14,3 +14,10 @@ class Condition(metaclass=ABCMeta):
         docstring
         """
         raise NotImplementedError
+
+    @abstractmethod
+    def realtime_data_requirement(self):
+        '''
+        REALTIME 데이터 중 필요로하는 데이터에 대한 정의
+        '''
+        raise NotImplementedError

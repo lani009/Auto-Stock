@@ -31,13 +31,13 @@ class CandleChart():
         '''
         return self.__unit
 
-    def get_candle_list(self) -> list(Candle):
+    def get_candle_list(self) -> [Candle, ...]:
         '''
         캔들을 list 형태로 리턴
         '''
         return self.__candle_list
 
-    def get_candle_by_index(self, index: int):
+    def get_candle_by_index(self, index: int) -> Candle:
         '''
         index번 째의 캔들을 리턴
         '''
