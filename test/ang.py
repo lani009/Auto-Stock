@@ -56,6 +56,9 @@ class ang(QAxWidget):
         self.OnReceiveTrCondition.connect(self.condition_tr_slot)
         # self.OnReceiveRealCondition.connect(self.condition_real_slot)
 
+    def get_condition_list(self):
+        pass
+
     def condition_slot(self, ConditionName):
 
         condition_name_list = self.dynamicCall("GetConditionNameList()")

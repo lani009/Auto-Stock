@@ -17,12 +17,13 @@ class Kiwoom(QAxWidget):
 
     __tr_data_temp = None
     __global_eventloop = QEventLoop()
+    __condition_name_list = None
 
     def __init__(self):
         self.OnReceiveTrData.connect(self.tr_data_slot)
-        self.condition_signal()
         self.OnReceiveConditionVer.connect(self.condition_slot)
         self.OnReceiveTrCondition.connect(self.condition_tr_slot)
+        self.condition_signal()
 
     def get_tr_data(self, input_value: dict, sRQName: str, sTrCode: str, nPrevNext: int, sScreenNo: str):
         self.set_input_values(input_value)
@@ -66,6 +67,8 @@ class Kiwoom(QAxWidget):
         print("코드 종목 \n %s" % code_list)
         return code_list
 
+    def get_condition_list(self):
+        return self.__condition_name_list
 
 
 
