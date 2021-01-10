@@ -54,9 +54,9 @@ class ang(QAxWidget):
     def condition_event_slot(self):
         self.OnReceiveConditionVer.connect(self.condition_slot)
         self.OnReceiveTrCondition.connect(self.condition_tr_slot)
-        self.OnReceiveRealCondition.connect(self.condition_real_slot)
+        # self.OnReceiveRealCondition.connect(self.condition_real_slot)
 
-    def condition_slot(self, lRet, sMsg):
+    def condition_slot(self, ConditionName):
 
         condition_name_list = self.dynamicCall("GetConditionNameList()")
 
@@ -66,9 +66,10 @@ class ang(QAxWidget):
             index = unit_condition.split("^")[0]
             index = int(index)
             condition_name = unit_condition.split("^")[1]
+        if condition_name == ConditionName:
+            self.dynamicCall("SendCondition(QString, QString, int, int)",
+                             "0156", condition_name, index, 0)  # 조회요청 + 실시간 조회print("조회 성공여부 %s " % ok)
 
-            ok = self.dynamicCall("SendCondition(QString, QString, int, int)",
-                                  "0156", condition_name, index, 1)  # 조회요청 + 실시간 조회print("조회 성공여부 %s " % ok)
 
     def condition_signal(self):
         self.dynamicCall("GetConditionLoad()")
@@ -79,27 +80,4 @@ class ang(QAxWidget):
 
         code_list = strCodeList.split(";")[:-1]
         print("코드 종목 \n %s" % code_list)
-
-    # 조건식 실시간으로 받기
-    def condition_real_slot(self, strCode, strType, strConditionName, strConditionIndex):
-        print("종목코드: %s, 이벤트종류: %s, 조건식이름: %s, 조건명인덱스: %s" % (strCode, strType, strConditionName, strConditionIndex))
-
-        if strType == "I":
-            print("종목코드: %s, 종목편입: %s" % (strCode, strType))
-
-        elif strType == "D":
-            print("종목코드: %s, 종목이탈: %s" % (strCode, strType))
-
-
-class Main():
-    def __init__(self):
-        print("Main() start")
-
-        self.app = QApplication(sys.argv)
-        self.kiwoom = ang()
-        self.app.exec_()
-        print("hi")
-
-
-if __name__ == "__main__":
-    Main()
+        return code_list

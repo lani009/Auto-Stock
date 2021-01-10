@@ -6,27 +6,28 @@ from request.enum.stockEnum import CandleUnit
 from algorithms.signal.signal import Signal
 
 
-class FifteenCandel(Algorithm):
+class Fifteen_Pivot2(Algorithm):
     '''
     15분봉 매매법
     '''
 
     def __init__(self, stock: Stock):
-        super().__init__(stock, FifteenCandel.FifteenCandel_BuyingCondition, FifteenCandel.FifteenCandel_sellingCondition)
+        super().__init__(stock, Fifteen_Pivot2.Fifteen_Pivot2_BuyingCondition, Fifteen_Pivot2.Fifteen_Pivot2_sellingCondition)
 
-    class FifteenCandel_BuyingCondition(Condition):
+    class Fifteen_Pivot2_BuyingCondition(Condition):
         def __init__(self):
             super().__init__()
 
-        def filter_list(self) -> list:
-
+        def filter_list(self) -> [Stock, ...]:
+            stock_box = Dao.put_found_stock("")
+                
         def condition_test(self):
             '''
             Condition 클래스의 condition 메소드를 오버라이드
             '''
             pass
 
-    class FifteenCandel_sellingCondition(Condition):
+    class Fifteen_Pivot2_sellingCondition(Condition):
         def __init__(self):
             super().__init__()
 
