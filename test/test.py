@@ -1,3 +1,18 @@
+from PyQt5.QAxContainer import QAxWidget
+from PyQt5.QtCore import QEventLoop
+
+
+class Test(QAxWidget):
+    def __init__(self):
+        super().__init__()
+
+        self.setControl("KHOPENAPI.KHOpenAPICtrl.1")  # 레지스트리에 저장된 api 모듈 불러오기
+        self.login_event_loop = QEventLoop()
+        self.slot()
+        self.signal_login_commConnect()
+
+        self.global_event_loop = QEventLoop()
+
 # # from PyQt5.QAxContainer import QAxWidget
 # # from PyQt5.QtCore import QEventLoop
 # # from PyQt5.QtWidgets import QApplication
@@ -164,11 +179,6 @@
 #         self.dynamicCall("CommConnect()")
 #         self.login_event_loop.exec_()
 
-#     def login_slot(self, err_code):
-#         print("로그인 성공")
-
-#         self.login_event_loop.exit()
-
 #     def get_candle_data(self, code: str) -> list:
 #         self.SetInputValue("종목코드", code)
 #         self.SetInputValue("틱범위", "30")
@@ -239,9 +249,9 @@
 #         self.gui.percent_label.setText(percent + "%")
 
 
-# class Main():
-#     def __init__(self):
-#         print("Main() start")
+class Main():
+    def __init__(self):
+        print("Main() start")
 
 #         self.app = QApplication(sys.argv)
 #         self.kiwoom = Test()

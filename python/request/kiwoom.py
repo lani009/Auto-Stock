@@ -14,11 +14,15 @@ class Kiwoom(QAxWidget):
     -----------
     이벤트루프를 적용하여 get_tr_data 등의 메소드가 thread safe 해야함
     '''
+
     __tr_data_temp = None
     __global_eventloop = QEventLoop()
 
     def __init__(self):
         self.OnReceiveTrData.connect(self.tr_data_slot)
+        self.condition_signal()
+        self.OnReceiveConditionVer.connect(self.condition_slot)
+        self.OnReceiveTrCondition.connect(self.condition_tr_slot)
 
     def get_tr_data(self, input_value: dict, sRQName: str, sTrCode: str, nPrevNext: int, sScreenNo: str):
         self.set_input_values(input_value)
@@ -33,3 +37,45 @@ class Kiwoom(QAxWidget):
     def _tr_data_slot(self):
         self.__tr_data_temp = None
         self.__global_eventloop.exit()
+
+###########################################################################################
+    def condition_slot(self, lRet, sMsg, ConditionName):
+        '''
+        조건 검색 목록 가져온 후 조건 검색 요청
+        '''
+        condition_name_list = self.dynamicCall("GetConditionNameList()")
+
+        condition_name_list = condition_name_list.split(";")[:-1]
+
+        for unit_condition in condition_name_list:
+            index = unit_condition.split("^")[0]
+            index = int(index)
+            condition_name = unit_condition.split("^")[1]
+            if condition_name == ConditionName:
+                self.dynamicCall("SendCondition(QString, QString, int, int)",
+                                 "0156", condition_name, index, 0)  # 조회요청 + 실시간 조회print("조회 성공여부 %s " % ok)
+
+    def condition_signal(self):
+        self.dynamicCall("GetConditionLoad()")
+
+    # 나의 조건식에 해당하는 종목코드 받기
+    def condition_tr_slot(self, sScrNo, strCodeList, strConditionName, index, nNext):
+        print("화면번호: %s, 종목코드 리스트: %s, 조건식 이름: %s, 조건식 인덱스: %s, 연속조회: %s" % (sScrNo, strCodeList, strConditionName, index, nNext))
+
+        code_list = strCodeList.split(";")[:-1]
+        print("코드 종목 \n %s" % code_list)
+        return code_list
+
+
+
+
+"""
+tr data
+opt10001 주식기본정보요청 -> 종목코드/ 종목명
+opt10080 주식분봉차트조회요청 -> 거래량 / 시가 / 고가 / 저가
+
+
+Real Type
+주식 시세 -> 10 현재가/ 12 등락율 / 16 시가 / 17 고가/ 18 저가
+주식 호가 잔량 -> 121 매도호가총잔량 / 125 매수호가총잔량
+"""
