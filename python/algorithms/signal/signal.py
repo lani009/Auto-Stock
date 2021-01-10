@@ -11,6 +11,7 @@ class Signal(QThread):
     '''
     __refresh_time = 1  # 조건 새로고침 주기 단위(초)
     __condition_list = []
+    __realtime_data_temp = None
     stock: Stock
 
     def __init__(self):
@@ -48,8 +49,9 @@ class Signal(QThread):
         '''
         # TODO DAO를 호출해서 GetCommRQData를 받아와야함
         # TODO realtime data 를 가공해야함
-
-        self.run_condition_trade()
+        # realtime_data_temp = ???
+        # run_condition_trade(realtime_data_temp)
+        self.run_condition_trade(self.__realtime_data_temp)
 
     def run_condition_trade(self, index: int, realtime_data):
         '''
