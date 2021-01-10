@@ -1,5 +1,5 @@
-from entity.candle import Candle
 from entity.candle import CandleChart
+from request.enum.stockEnum import CandleUnit
 
 
 class Stock():
@@ -14,15 +14,13 @@ class Stock():
     def __init__(self):
         pass
 
-    def get_current_data(self):
-        pass
-
-    def get_candle(self, tick: int) -> CandleChart:
+    def get_candle(self, unit: CandleUnit, tick: int) -> CandleChart:
         '''
         봉 차트를 CandleChart 형태로 반환한다.
 
         attribute
         ---------
-        tick: 틱
+        unit: 봉 단위
+        tick: 틱 단위
         '''
         pass

@@ -20,13 +20,17 @@ class Algorithm(metaclass=ABCMeta):
     __selling_condition: Condition  # 매도 조건
     __buying_condition: Condition   # 매수 조건
 
-    def __init__(self, stock: Stock, buying_condition: Condition, selling_condition: Condition):
+    def __init__(self, stock: Stock, buying_condition: Condition, selling_condition: Condition, signal: Signal):
         self.__stock = stock
-        self.__buying_condition = buying_condition
-        self.__selling_condition = selling_condition
-        self.__signal = Signal()
-        self.reg_signal(buying_condition, OfferStock.BUYING)
-        self.reg_signal(selling_condition, OfferStock.SELLING)
+        self.__buying_condition = buying_condition()
+        self.__selling_condition = selling_condition()
+        self.__signal = signal
+
+        self.reg_signal(self.__buying_condition, OfferStock.BUYING)
+        self.reg_signal(self.__selling_condition, OfferStock.SELLING)
+
+    def get_stock(self) -> Stock:
+        return self.__stock
 
     @abstractmethod
     @staticmethod
