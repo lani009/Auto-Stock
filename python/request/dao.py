@@ -1,5 +1,6 @@
 import queue
 from request.enum.stockEnum import CandleUnit
+from request.enum.stockEnum import TrCode
 from entity.stock import Stock
 from entity.candle import CandleChart
 from request.kiwoom import Kiwoom
@@ -7,8 +8,9 @@ from request.kiwoom import Kiwoom
 
 class Dao():
     '''
-    키움 API Data Access Object 클래스
+    Signleton
 
+    키움 API Data Access Object 클래스
     '''
     __request_queue = queue.Queue(maxsize=1)    # size를 1로 막아두어, 하나 이상의 요청이 들어올 경우, blocking
     __kiwoom_obj: Kiwoom
@@ -25,7 +27,7 @@ class Dao():
             # TODO 로그인 작성
             cls._init = True
 
-    def request_tr_data(self, input_value: dict, sRQName: str, sTrCode: str, nPrevNext: int, sScreenNo: str):
+    def request_tr_data(self, input_value: dict, trEnum: TrCode, nPrevNext: int, sScreenNo: str):
         '''
         키움 서버에 tr 데이터를 요청한다.
 
@@ -48,7 +50,7 @@ class Dao():
         SetInputValue("거래량구분", "입력값 3");
         '''
         self.__request_queue.put(0)
-        self.__kiwoom_obj.get_tr_data(input_value, sRQName, sTrCode, nPrevNext, sScreenNo)
+        self.__kiwoom_obj.get_tr_data(input_value, trEnum, nPrevNext, sScreenNo)
         self.__request_queue.get()
         pass
 
@@ -63,6 +65,25 @@ class Dao():
         tick: 틱 단위
         '''
         self.__request_queue.put(0)
+
+        data = None
+        if unit == CandleUnit.HOUR:
+            pass
+        elif unit == CandleUnit.MINUIT:
+            data = self.__kiwoom_obj.get_tr_data({
+                "종목코드": stock.get_int_name,
+                "틱범위:": tick,
+                "수정주가구분": 0
+            }, TrCode.OPT10080, 0, 2000)
+        elif unit == CandleUnit.SECOND:
+            pass
+        elif unit == CandleUnit.TICK:
+            pass
+
+        return data
+
+    def request_SMA_data(self):
+        # candle = self.request_candle_data()
         pass
 
     def reg_realtime_slot(self, callback, stock: Stock):
@@ -71,11 +92,3 @@ class Dao():
         '''
         self.__request_queue.put(0)
         pass
-
-    def request_found_stock(self, eqName: str) -> [Stock, ...]:
-        '''
-        종목검색을 하는 메서드
-        '''
-        self.__request_queue.put(0)
-        found_stock=kiwoom.foo
-        return found_stock

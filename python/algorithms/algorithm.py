@@ -17,17 +17,18 @@ class Algorithm(metaclass=ABCMeta):
     __stock: Stock  # 보유 주식
     __money: int    # 예수금
     __signal: Signal    # 시그널
+    __refresh_time: int     # Condtion 갱신 주기
     __selling_condition: Condition  # 매도 조건
     __buying_condition: Condition   # 매수 조건
 
-    def __init__(self, stock: Stock, buying_condition: Condition, selling_condition: Condition, signal: Signal):
+    def __init__(self, stock: Stock, buying_condition: Condition, selling_condition: Condition, __refresh_time):
         self.__stock = stock
         self.__buying_condition = buying_condition()
         self.__selling_condition = selling_condition()
-        self.__signal = signal
+        self.__signal = Signal()
 
-        self.reg_signal(self.__buying_condition, OfferStock.BUYING)
-        self.reg_signal(self.__selling_condition, OfferStock.SELLING)
+        self.reg_condition(self.__buying_condition, OfferStock.BUYING)
+        self.reg_condition(self.__selling_condition, OfferStock.SELLING)
 
     def get_stock(self) -> Stock:
         return self.__stock
@@ -38,7 +39,15 @@ class Algorithm(metaclass=ABCMeta):
         '''
         거래 대상 주식 필터링
         '''
-        pass
+        raise NotImplementedError
+
+    def get_refresh_time(self) -> int:
+        '''
+        Condition 갱신 주기
+
+        단위: 초
+        '''
+        return self.__refresh_time
 
     def force_selling(self):
         '''
@@ -54,8 +63,11 @@ class Algorithm(metaclass=ABCMeta):
         '''
         pass
 
-    def reg_signal(self, condition: Condition, callback, offer):
+    def reg_condition(self, condition: Condition, callback, offer):
         '''
-        시그널 등록 위임 메소드
+        Condition 등록 위임 메소드
         '''
-        self.__signal.attach_signal(condition, offer)
+        self.__signal.attach_condition(condition, offer)
+
+    def _get_signal(self) -> Signal:
+        return self.__signal

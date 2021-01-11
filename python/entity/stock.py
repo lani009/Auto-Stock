@@ -1,7 +1,3 @@
-from entity.candle import CandleChart
-from request.enum.stockEnum import CandleUnit
-
-
 class Stock():
     '''
     엔티티 클래스
@@ -11,16 +7,23 @@ class Stock():
     __stock_name_by_str: str    # string 타입 종목 이름
     __stock_name_by_int: int    # int 타입 종목 코드
 
-    def __init__(self):
-        pass
-
-    def get_candle(self, unit: CandleUnit, tick: int) -> CandleChart:
+    def __init__(self, str_name: str, int_name: int):
         '''
-        봉 차트를 CandleChart 형태로 반환한다.
+        str_name: 종목 이름
 
-        attribute
-        ---------
-        unit: 봉 단위
-        tick: 틱 단위
+        int_name: 종목 코드
         '''
-        pass
+        self.__stock_name_by_str = str_name
+        self.__stock_name_by_int = int_name
+
+    def get_str_name(self):
+        '''
+        종목 이름 반환
+        '''
+        return self.__stock_name_by_str
+
+    def get_int_name(self):
+        '''
+        종목 코드 반환
+        '''
+        return self.__stock_name_by_int

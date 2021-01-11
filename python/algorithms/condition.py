@@ -11,7 +11,7 @@ class Condition(metaclass=ABCMeta):
     @abstractmethod
     def condition_test(self, realtime_data: dict) -> bool:
         """
-        docstring
+        조건 검색 실행
         """
         raise NotImplementedError
 
