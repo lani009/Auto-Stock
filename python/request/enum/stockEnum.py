@@ -21,3 +21,7 @@ class RealTimeDataEnum(Enum):
     LOW_PRICE = 18
     ACCUMULATED_VOLUME = 13
     MARKET_CAP = 311
+
+
+class TrCode(Enum):
+    OPT10080 = "주식분봉차트조회요청"
