@@ -8,7 +8,7 @@ def main():
 
     app = QApplication(sys.argv)
     index_class = Index()
-    index_class.run()
+    index_class.start()
     app.exec_()
 
 

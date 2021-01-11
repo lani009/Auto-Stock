@@ -25,7 +25,7 @@ class AlgoritmRunner():
 
     def register_algorithm(self, algorithm: Algorithm, stock: Stock) -> None:
         '''
-        해당 알고리즘이 작동할 수 있도록, 등록한다.
+        해당 알고리즘이 작동할 수 있도록, 알고리즘 목록에 등록한다.
         '''
         algorithm_param = algorithm()        # 알고리즘 객체 생성
         self.__algorithm_list.append(algorithm_param)  # 알고리즘 리스트에 추가

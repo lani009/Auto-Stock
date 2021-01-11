@@ -20,7 +20,7 @@ class Signal(QThread):
     def run(self):
         pass
 
-    def attach_signal(self, condition: Condition, offer) -> None:
+    def attach_condition(self, condition: Condition, offer) -> None:
         '''
         시그널 이벤트 등록
         '''
@@ -29,11 +29,11 @@ class Signal(QThread):
             condition, offer
         ])
 
-    def detach_signal(self):
+    def detach_condition(self):
         pass
 
-    def get_signal_list(self):
-        pass
+    def get_condition_list(self):
+        return self.__condition_list
 
     def realtime_data_slot(self, sScrNo: str, sRQName: str, sTrCode: str, sRecordName: str, sPrevNext: str):
         '''
