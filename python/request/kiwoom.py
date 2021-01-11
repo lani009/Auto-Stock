@@ -18,20 +18,26 @@ class Kiwoom(QAxWidget):
     '''
 
     __global_eventloop = None       # 동기처리를 위한 전역 EventLoop
-    __tr_data_temp = None           # GetTrData의 결과가 임시적으로 담기는 곳
+    __tr_data_temp = {}             # GetTrData의 결과가 임시적으로 담기는 곳
     __condition_name_list = []      # 조건식 이름과 인덱스가 임시적으로 담기는 곳
     __condition_stock_list = None   # 조건식 필터링 결과가 임시적으로 담기는 곳
+    __tr_rq_single_data = None      # 사용자 요청 싱글데이터
+    __tr_rq_multi_data = None       # 사용자 요청 멀티데이터
 
     def __init__(self):
         self.__global_eventloop = QEventLoop()
         self.__reg_all_slot()     # 이벤트 슬롯 등록
 
-    def get_tr_data(self, input_value: dict, trEnum: TrCode, nPrevNext: int, sScreenNo: str):
+    def get_tr_data(self, inputValue: dict, trEnum: TrCode, nPrevNext: int, sScreenNo: str, rqSingleData, rqMultiData):
         '''
         키움 API에 Tr 데이터를 요청한다.
         '''
-        self.set_input_values(input_value)
-        self.dynamicCall("CommRqData(Qstring, QString, int, QString)", trEnum.value, trEnum.value, nPrevNext, sScreenNo)
+        self.__tr_rq_single_data = rqSingleData
+        self.__tr_rq_multi_data = rqMultiData
+
+        self.set_input_values(inputValue)   # inputvalue 대입
+        self.dynamicCall("CommRqData(Qstring, QString, int, QString)",
+                         trEnum.value, trEnum.name, nPrevNext, sScreenNo)
         self.__global_eventloop.exec_()
         return self.__tr_data_temp
 
@@ -67,16 +73,28 @@ class Kiwoom(QAxWidget):
 
     def _set_input_values(self, input_value: dict):
         '''
-        SetInputVlaue() 동적 호출 용도
+        SetInputVlaue() 동적 호출 iteration 용도
         '''
         for k, v in input_value.items():
             self.dynamicCall("SetInputValue(QString, QString)", k, v)
 
-    def _tr_data_slot(self):
+    def _tr_data_slot(self, sScrNo, sTrCode, sRecordName, sPrevNext):
         '''
         CommRqData 처리용 슬롯
         '''
-        self.__tr_data_temp = None  # TODO
+        self.__tr_data_temp.clear()     # 이전에 저장되어 있던 임시 tr_data 삭제.
+
+        self.__tr_data_temp["single_data"] = {}     # empty dict 선언
+        for s_data in self.__tr_rq_single_data:
+            self.__tr_data_temp["single_data"][s_data] = self.dynamicCall(
+                "GetCommData(QString, QString, int, QString)", sScrNo, sTrCode, 0, s_data)
+
+        self.__tr_data_temp["multi_data"] = {}      # empty dict 선언
+        for i in range(500):
+            for m_data in self.__tr_rq_multi_data:
+                self.__tr_data_temp["multi_data"][m_data] = self.dynamicCall(
+                    "GetCommData(QString, QString, int, QString)", sScrNo, sTrCode, i, m_data)
+
         self.__global_eventloop.exit()
 
     def _send_condition_slot(self, sScrNo, strCodeList, strConditionName, nIndex, nNext):
