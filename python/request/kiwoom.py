@@ -31,6 +31,7 @@ class Kiwoom(QAxWidget):
 
     def do_login(self):
         self.dynamicCall("CommConnect()")
+        self.__global_eventloop.exec_()
 
     def get_tr_data(self, inputValue: dict, trEnum: TrCode, nPrevNext: int, sScrNo: str, rqSingleData, rqMultiData):
         '''
@@ -130,7 +131,7 @@ class Kiwoom(QAxWidget):
         self.__realtime_data_callback(sCode, sRealType, sRealData)
 
     def _login_slot(self, errNo):
-        pass
+        self.__global_eventloop.exit()
 
     def _send_condition_slot(self, sScrNo, strCodeList, strConditionName, nIndex, nNext):
         '''
