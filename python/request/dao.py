@@ -4,7 +4,7 @@ import queue
 from request.enum.stockEnum import CandleUnit
 from request.enum.stockEnum import TrCode
 from entity.stock import Stock
-from entity.candle import CandleChart
+from entity.candleChart import CandleChart
 from request.kiwoom import Kiwoom
 
 
@@ -30,6 +30,9 @@ class Dao():
             self.__kiwoom_obj.set_realtime_callback(self._realtime_data_processor)
             # TODO 로그인 작성
             cls._init = True
+
+    def login(self):
+        self.__kiwoom_obj.do_login()
 
     def request_tr_data(self, input_value: dict, trEnum: TrCode, nPrevNext: int, sScreenNo: str):
         '''
