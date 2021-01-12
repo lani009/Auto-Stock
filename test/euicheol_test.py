@@ -9,6 +9,9 @@ class Main():
     __event_loop = None
     __condition_list = []
     __condition_stock_list = []
+    __tr_data_temp = None
+    __tr_rq_single_data = None
+    __tr_rq_multi_data = None
 
     def __init__(self):
         self.__kiwoom = QAxWidget("KHOPENAPI.KHOpenAPICtrl.1")
@@ -17,6 +20,7 @@ class Main():
         self.__kiwoom.OnEventConnect.connect(self.__login_slot)
         self.__kiwoom.OnReceiveConditionVer.connect(self.__condition_ver_slot)
         self.__kiwoom.OnReceiveTrCondition.connect(self.__send_condition_slot)
+        self.__kiwoom.OnReceiveTrData.connect(self.__tr_data_slot)
 
     def login(self):
         self.__kiwoom.dynamicCall("CommConnect()")
@@ -39,12 +43,31 @@ class Main():
                 print()
             i += 1
 
+    def get_tr_data(self, inputValue: dict, sRQName: str, sTrName: str, nPrevNext: int, sScreenNo: str, rqSingleData, rqMultiData):
+        '''
+        키움 API에 Tr 데이터를 요청한다.
+        '''
+        self.__tr_rq_single_data = rqSingleData
+        self.__tr_rq_multi_data = rqMultiData
+
+        self.set_input_values(inputValue)   # inputvalue 대입
+        self.dynamicCall("CommRqData(Qstring, QString, int, QString)", sRQName, sTrName, nPrevNext, sScreenNo)
+        self.__event_loop.exec_()
+        return self.__tr_data_temp
+
+    def _set_input_values(self, input_value: dict):
+        '''
+        SetInputVlaue() 동적 호출 iteration 용도
+        '''
+        for k, v in input_value.items():
+            self.dynamicCall("SetInputValue(QString, QString)", k, v)
+
     def __condition_ver_slot(self, lRet, sMsg):
         condition_name_list: str
         condition_name_list = self.__kiwoom.dynamicCall("GetConditionNameList()")
         '''
         condition_name_list
-        =
+        ==============
         인덱스^조건식이름;인덱스^조건식이름;
         '''
 
@@ -60,14 +83,25 @@ class Main():
         self.__condition_stock_list = strCodeList.split(";")
         self.__event_loop.exit()
 
+    def __tr_data_slot(self, sScrno, sRQName, sTrCode, sRecodrName, sPrevNext):
+        '''
+        CommRqData 처리용 슬롯
+        '''
+        self.__tr_data_temp = None  # 이전에 저장되어 있던 임시 tr_data 삭제. 가비지 콜렉터를 믿는다.
+        self.candle_data = []
+        # for i in range(200):
+        #     candle = {
+        #         "고가": self.dynamicCall("GetCommData(QString, QString, int, QString)", sTrCode, sRecordName, i, "고가"),
+        #         "저가": self.dynamicCall("GetCommData(QString, QString, int, QString)", sTrCode, sRecordName, i, "저가"),
+        #         "시가": self.dynamicCall("GetCommData(QString, QString, int, QString)", sTrCode, sRecordName, i, "시가"),
+        #         "체결시간": self.dynamicCall("GetCommData(QString, QString, int, QString)", sTrCode, sRecordName, i, "체결시간")
+        #     }
+        self.__event_loop.exit()
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     main = Main()
     main.login()
-    condition_list = main.get_condition_list()
 
-    print(condition_list)
-
-    main.print_condition_list(condition_list[1])
     sys.exit(app.exit())

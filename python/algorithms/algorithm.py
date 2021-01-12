@@ -63,11 +63,20 @@ class Algorithm(metaclass=ABCMeta):
         '''
         pass
 
-    def reg_condition(self, condition: Condition, callback, offer):
+    def start_algorithm_thread(self):
+        '''
+        알고리즘 스레드 스타트
+        '''
+        self._get_signal().start()
+
+    def stop_algorithm_thread(self):
+        pass
+
+    def _get_signal(self) -> Signal:
+        return self.__signal
+
+    def __reg_condition(self, condition: Condition, callback, offer):
         '''
         Condition 등록 위임 메소드
         '''
         self.__signal.attach_condition(condition, offer)
-
-    def _get_signal(self) -> Signal:
-        return self.__signal
