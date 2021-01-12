@@ -26,6 +26,8 @@ class Kiwoom(QAxWidget):
     __realtime_data_callback = None     # 실시간 데이터 콜백
 
     def __init__(self):
+        super().__init__()
+        self.setControl("KHOPENAPI.KHOpenAPICtrl.1")
         self.__global_eventloop = QEventLoop()
         self.__reg_all_slot()     # 이벤트 슬롯 등록
 
@@ -163,7 +165,7 @@ class Kiwoom(QAxWidget):
         키움 API의 이벤트 슬롯을 전부 다 등록
         '''
         self.OnEventConnect.connect(self._login_slot)                 # 로그인 슬롯
-        self.OnReceiveTrData.connect(self.__tr_data_slot)             # Tr 데이터 슬롯
+        self.OnReceiveTrData.connect(self._tr_data_slot)              # Tr 데이터 슬롯
         self.OnReceiveConditionVer.connect(self._condition_ver_slot)  # 조건식 데이터 슬롯
         self.OnReceiveTrCondition.connect(self._send_condition_slot)  # 조건식 종목 슬롯
         self.OnReceiveRealData.connect(self._realtime_data_slot)      # 실시간 데이터 슬롯
