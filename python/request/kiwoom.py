@@ -29,6 +29,9 @@ class Kiwoom(QAxWidget):
         self.__global_eventloop = QEventLoop()
         self.__reg_all_slot()     # 이벤트 슬롯 등록
 
+    def do_login(self):
+        self.dynamicCall("CommConnect()")
+
     def get_tr_data(self, inputValue: dict, trEnum: TrCode, nPrevNext: int, sScrNo: str, rqSingleData, rqMultiData):
         '''
         키움 API에 Tr 데이터를 요청한다.
@@ -126,6 +129,9 @@ class Kiwoom(QAxWidget):
         '''
         self.__realtime_data_callback(sCode, sRealType, sRealData)
 
+    def _login_slot(self, errNo):
+        pass
+
     def _send_condition_slot(self, sScrNo, strCodeList, strConditionName, nIndex, nNext):
         '''
         SendCondition 처리용 슬롯
@@ -155,6 +161,7 @@ class Kiwoom(QAxWidget):
         '''
         키움 API의 이벤트 슬롯을 전부 다 등록
         '''
+        self.OnEventConnect.connect(self._login_slot)                 # 로그인 슬롯
         self.OnReceiveTrData.connect(self.__tr_data_slot)             # Tr 데이터 슬롯
         self.OnReceiveConditionVer.connect(self._condition_ver_slot)  # 조건식 데이터 슬롯
         self.OnReceiveTrCondition.connect(self._send_condition_slot)  # 조건식 종목 슬롯

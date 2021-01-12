@@ -1,4 +1,6 @@
+from pandas import Series, DataFrame
 import queue
+
 from request.enum.stockEnum import CandleUnit
 from request.enum.stockEnum import TrCode
 from entity.stock import Stock
