@@ -12,8 +12,9 @@ class Dao():
 
     키움 API Data Access Object 클래스
     '''
-    __request_queue = queue.Queue(maxsize=1)    # size를 1로 막아두어, 하나 이상의 요청이 들어올 경우, blocking
+    __request_queue = queue.Queue(maxsize=1)    # size를 1로 막아두어, 하나 이상의 요청이 들어올 경우 해당 스레드는 blocking 되게함
     __kiwoom_obj: Kiwoom
+    __realtime_data_list = []     # 현재 reg 되어 있는 realtime data 들의 목록
 
     def __new__(cls, *args, **kwargs):
         if not hasattr(cls, "_instance"):
@@ -24,6 +25,7 @@ class Dao():
         cls = type(self)
         if not hasattr(cls, "_init"):
             self.__kiwoom_obj = Kiwoom()
+            self.__kiwoom_obj.set_realtime_callback(self._realtime_data_processor)
             # TODO 로그인 작성
             cls._init = True
 
@@ -50,9 +52,9 @@ class Dao():
         SetInputValue("거래량구분", "입력값 3");
         '''
         self.__request_queue.put(0)
-        self.__kiwoom_obj.get_tr_data(input_value, trEnum, nPrevNext, sScreenNo)
+        data = self.__kiwoom_obj.get_tr_data(input_value, trEnum, nPrevNext, sScreenNo)
         self.__request_queue.get()
-        pass
+        return data
 
     def request_candle_data(self, stock: Stock, unit: CandleUnit, tick: int) -> CandleChart:
         '''
@@ -86,9 +88,66 @@ class Dao():
         # candle = self.request_candle_data()
         pass
 
-    def reg_realtime_slot(self, callback, stock: Stock):
+    def reg_realtime_data(self, callback, stock: Stock, realtimeDataList):
         '''
-        해당 주식의 실시간 데이터 슬롯을 등록한다.
+        해당 주식의 실시간 데이터 처리 콜백을 등록한다.
         '''
         self.__request_queue.put(0)
-        pass
+        self.__realtime_data_list.append([callback, realtimeDataList, stock])     # 실시간 데이터 처리 목록에 추가
+        self.__kiwoom_obj.set_realtime_reg(2000, [stock], realtimeDataList)
+        self.__request_queue.get()
+
+    def request_condition_list(self):
+        '''
+        조건식 목록을 반환한다.
+
+        return
+        -------
+        [
+            [인덱스 번호, 조건식 이름],
+            [인덱스 번호, 조건식 이름],
+            ...
+        ]
+        '''
+        return self.__kiwoom_obj.get_condition_list()
+
+    def request_stock_instance(self, stock_code):
+        '''
+        종목 코드에 해당하는 Stock 객체를 반환한다.
+        '''
+        tr_data = self.__kiwoom_obj.get_tr_data({"종목코드": stock_code}, TrCode.OPT10001,
+                                                0, 2000, ["종목명", "PER", "PBR"], [])
+
+        stock_temp = Stock(tr_data["single_data"]["종목명"], stock_code)
+        stock_temp.set_per(float(tr_data["single_data"]["PER"]))
+        stock_temp.set_pbr(float(tr_data["single_data"]["PBR"]))
+        return stock_temp
+
+    def request_condition_stock(self, index, cond_name):
+        '''
+        해당 조건식에 부합하는 주식 종목을 반환한다.
+
+        param
+        ------
+        index: 조건식 인덱스 번호
+
+        cond_name: 조건식 이름
+
+        return
+        -------
+        [Stock, Stock, ...]
+        Stock 객체를 list로 wrapping하여 반환한다.
+        '''
+        stock_code_list = self.__kiwoom_obj.get_condition_stock(2000, index, cond_name)
+
+        stock_list = []     # Stock 객체 리스트
+        for stock_code in stock_code_list:
+            stock_list.append(self.request_stock_instance(stock_code))
+
+        return stock_list
+
+    def _realtime_data_processor(self, sCode, sRealType, sRealData):
+        stock = self.request_stock_instance(sCode)
+        for realtime_list in self.__realtime_data_list:
+            if realtime_list[1] == stock:
+                realtime_list[0]()

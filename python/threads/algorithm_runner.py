@@ -27,7 +27,8 @@ class AlgoritmRunner():
         '''
         해당 알고리즘이 작동할 수 있도록, 알고리즘 목록에 등록한다.
         '''
-        algorithm_param = algorithm()        # 알고리즘 객체 생성
+        algorithm_param = algorithm(stock)          # 알고리즘 객체 생성
+        algorithm_param.start_algorithm_thread()    # 알고리즘 스레드 실행
         self.__algorithm_list.append(algorithm_param)  # 알고리즘 리스트에 추가
 
     def get_algorithm_list(self) -> list:

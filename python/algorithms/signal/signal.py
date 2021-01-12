@@ -9,7 +9,7 @@ class Signal(QThread):
     '''
     시그널 감지 클래스
     '''
-    __refresh_time = 1  # 조건 새로고침 주기 단위(초)
+    __refresh_time = None  # 조건 새로고침 주기 단위(초)
     __condition_list = []
     __realtime_data_temp = None
     stock: Stock
@@ -24,10 +24,8 @@ class Signal(QThread):
         '''
         시그널 이벤트 등록
         '''
-        Dao().reg_slot(self.realtime_data_slot, self.stock)
-        self.__condition_list.append([
-            condition, offer
-        ])
+        Dao().reg_realtime_slot(self.realtime_data_slot, self.stock)    # 실시간 슬롯에 등록
+        self.__condition_list.append([condition, offer])
 
     def detach_condition(self):
         pass
@@ -35,7 +33,7 @@ class Signal(QThread):
     def get_condition_list(self):
         return self.__condition_list
 
-    def realtime_data_slot(self, sScrNo: str, sRQName: str, sTrCode: str, sRecordName: str, sPrevNext: str):
+    def realtime_data_slot(self, sCode: str, sRealType: str, sRealData: str, sRecordName: str, sPrevNext: str):
         '''
         real time data 이벤트 슬롯
 
@@ -49,8 +47,7 @@ class Signal(QThread):
         '''
         # TODO DAO를 호출해서 GetCommRQData를 받아와야함
         # TODO realtime data 를 가공해야함
-        # realtime_data_temp = ???
-        # run_condition_trade(realtime_data_temp)
+        # Dao().
         self.run_condition_trade(self.__realtime_data_temp)
 
     def run_condition_trade(self, index: int, realtime_data):
@@ -71,6 +68,5 @@ class Signal(QThread):
         '''
         매도, 매수 조건에 맞는지 판별
         '''
-        condition: Condition
         condition = self.__condition_list[index][0]
         return (condition.condition_test(realtime_data), self.__condition_list[index][1])
