@@ -42,7 +42,7 @@ class Kiwoom(QAxWidget):
         self.__tr_rq_single_data = rqSingleData
         self.__tr_rq_multi_data = rqMultiData
 
-        self.set_input_values(inputValue)   # inputvalue 대입
+        self._set_input_values(inputValue)   # inputvalue 대입
         self.dynamicCall("CommRqData(Qstring, QString, int, QString)",
                          trEnum.value, trEnum.name, nPrevNext, sScrNo)
         self.__global_eventloop.exec_()

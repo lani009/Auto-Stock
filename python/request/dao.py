@@ -124,8 +124,9 @@ class Dao():
                                                 0, 2000, ["종목명", "PER", "PBR"], [])
 
         stock_temp = Stock(tr_data["single_data"]["종목명"], stock_code)
-        stock_temp.set_per(float(tr_data["single_data"]["PER"]))
-        stock_temp.set_pbr(float(tr_data["single_data"]["PBR"]))
+        print(tr_data["single_data"]["PER"])
+        # stock_temp.set_per(float(tr_data["single_data"]["PER"]))
+        # stock_temp.set_pbr(float(tr_data["single_data"]["PBR"]))
         return stock_temp
 
     def request_condition_stock(self, index, cond_name):
