@@ -6,6 +6,7 @@ from request.enum.stockEnum import TrCode
 from entity.stock import Stock
 from entity.candleChart import CandleChart
 from request.kiwoom import Kiwoom
+from datetime import datetime
 
 
 class Dao():
@@ -33,6 +34,8 @@ class Dao():
 
     def login(self):
         self.__kiwoom_obj.do_login()
+
+
 
     def request_tr_data(self, input_value: dict, trEnum: TrCode, nPrevNext: int, sScreenNo: str):
         '''
@@ -74,23 +77,51 @@ class Dao():
         self.__request_queue.put(0)
 
         data = None
-        if unit == CandleUnit.HOUR:
-            pass
+        if unit == CandleUnit.DAY:
+            today_date = self.get_today_date()
+            data = self.__kiwoom_obj.get_tr_data({
+                "종목코드": stock.get_int_name,
+                "기준일자:": today_date,
+                "수정주가구분": 0
+            }, TrCode.OPT10081, 0, 2000)
+
+
+
         elif unit == CandleUnit.MINUIT:
             data = self.__kiwoom_obj.get_tr_data({
                 "종목코드": stock.get_int_name,
                 "틱범위:": tick,
                 "수정주가구분": 0
             }, TrCode.OPT10080, 0, 2000)
-        elif unit == CandleUnit.SECOND:
-            pass
-        elif unit == CandleUnit.TICK:
-            pass
 
-        return data
+        # elif unit == CandleUnit.SECOND:
+        #     data = self.__kiwoom_obj.get_tr_data({
+        #         "종목코드": stock.get_int_name,
+        #         "틱범위:": tick,
+        #         "수정주가구분": 0
+        #     }, TrCode.OPT10080, 0, 2000)
+
+        elif unit == CandleUnit.TICK:
+            data = self.__kiwoom_obj.get_tr_data({
+                "종목코드": stock.get_int_name,
+                "틱범위:": tick,
+                "수정주가구분": 0
+            }, TrCode.OPT10079, 0, 2000)
+
+        return DataFrame(data)
 
     def request_SMA_data(self):
         # candle = self.request_candle_data()
+        # 캔들 최근 종가 1~5까지의 합/5
+        # 캔들 최근 종가 1~10까지의 합/10
+        # 캔들 최근 종가 1~20까지의 합/20
+        '''
+        이동평균 데이터
+            1분전 2분전 3분전 4분전 5분전
+        5
+        10
+        20
+        '''
         pass
 
     def reg_realtime_data(self, callback, stock: Stock, realtimeDataList):
@@ -157,3 +188,11 @@ class Dao():
         for realtime_list in self.__realtime_data_list:
             if realtime_list[1] == stock:
                 realtime_list[0]()
+
+    def get_today_date():
+        '''
+        당일의 날짜를 yyyymmdd로 반환한다.
+        일봉 조회에서 사용됨.
+        '''
+        date_today = datetime.today()
+        return date_today.strftime('20%y%m%d')
