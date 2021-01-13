@@ -6,7 +6,7 @@ from request.enum.stockEnum import TrCode
 from entity.stock import Stock
 from entity.candleChart import CandleChart
 from request.kiwoom import Kiwoom
-
+from datetime import datetime
 
 
 class Dao():
@@ -78,7 +78,7 @@ class Dao():
 
         data = None
         if unit == CandleUnit.DAY:
-            today_date = self.__kiwoom_obj.get_today_date()
+            today_date = self.get_today_date()
             data = self.__kiwoom_obj.get_tr_data({
                 "종목코드": stock.get_int_name,
                 "기준일자:": today_date,
@@ -187,3 +187,11 @@ class Dao():
         for realtime_list in self.__realtime_data_list:
             if realtime_list[1] == stock:
                 realtime_list[0]()
+
+    def get_today_date():
+        '''
+        당일의 날짜를 yyyymmdd로 반환한다.
+        일봉 조회에서 사용됨.
+        '''
+        date_today = datetime.today()
+        return date_today.strftime('20%y%m%d')
