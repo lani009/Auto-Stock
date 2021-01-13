@@ -11,6 +11,7 @@ class CandleUnit(Enum):
     SECOND = auto()
     MINUIT = auto()
     HOUR = auto()
+    DAY = auto()
 
 
 class RealTimeDataEnum(Enum):

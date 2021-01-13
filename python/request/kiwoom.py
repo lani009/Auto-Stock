@@ -2,7 +2,7 @@ from PyQt5.QAxContainer import QAxWidget
 from PyQt5.QtCore import QEventLoop
 
 from request.enum.stockEnum import TrCode
-
+from datetime import datetime
 
 class Kiwoom(QAxWidget):
     '''
@@ -169,3 +169,11 @@ class Kiwoom(QAxWidget):
         self.OnReceiveConditionVer.connect(self._condition_ver_slot)  # 조건식 데이터 슬롯
         self.OnReceiveTrCondition.connect(self._send_condition_slot)  # 조건식 종목 슬롯
         self.OnReceiveRealData.connect(self._realtime_data_slot)      # 실시간 데이터 슬롯
+
+    def get_today_date():
+        '''
+        당일의 날짜를 yyyymmdd로 반환한다.
+        일봉 조회에서 사용됨.
+        '''
+        date_today = datetime.today()
+        return date_today.strftime('20%y%m%d')
