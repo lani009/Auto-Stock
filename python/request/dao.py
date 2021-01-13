@@ -83,32 +83,42 @@ class Dao():
                 "종목코드": stock.get_int_name,
                 "기준일자:": today_date,
                 "수정주가구분": 0
-            }, TrCode.OPT10081, 0, 2000)
-
-
+            }, TrCode.OPT10081, 0, 2000, [], ["체결시간", "시가", "현재가", "저가", "고가", "거래량"])
 
         elif unit == CandleUnit.MINUIT:
             data = self.__kiwoom_obj.get_tr_data({
                 "종목코드": stock.get_int_name,
                 "틱범위:": tick,
                 "수정주가구분": 0
-            }, TrCode.OPT10080, 0, 2000)
-
-        # elif unit == CandleUnit.SECOND:
-        #     data = self.__kiwoom_obj.get_tr_data({
-        #         "종목코드": stock.get_int_name,
-        #         "틱범위:": tick,
-        #         "수정주가구분": 0
-        #     }, TrCode.OPT10080, 0, 2000)
+            }, TrCode.OPT10080, 0, 2000, [], ["체결시간", "시가", "현재가", "저가", "고가", "거래량"])
 
         elif unit == CandleUnit.TICK:
             data = self.__kiwoom_obj.get_tr_data({
                 "종목코드": stock.get_int_name,
                 "틱범위:": tick,
                 "수정주가구분": 0
-            }, TrCode.OPT10079, 0, 2000)
+            }, TrCode.OPT10079, 0, 2000, [], ["체결시간", "시가", "현재가", "저가", "고가", "거래량"])
 
-        return DataFrame(data)
+        time_list = [m_data["체결시간"] for m_data in data["multi_data"]]
+        open_list = [m_data["시가"] for m_data in data["multi_data"]]
+        close_list = [m_data["현재가"] for m_data in data["multi_data"]]
+        low_list = [m_data["저가"] for m_data in data["multi_data"]]
+        high_list = [m_data["고가"] for m_data in data["multi_data"]]
+        volume_list = [m_data["거래량"] for m_data in data["multi_data"]]
+        dict_data = {"time": time_list, "open": open_list, "close": close_list, "low": low_list, "high": high_list, "volume": volume_list}
+        prc_data = DataFrame(dict_data)
+
+        ma5 = (prc_data.close.rolling(5).mean())
+        ma10 = (prc_data.close.rolling(10).mean())
+        ma20 = (prc_data.close.rolling(20).mean())
+        ma60 = (prc_data.close.rolling(60).mean())
+
+        prc_data.insert(len(prc_data.columns), "ma5", ma5)
+        prc_data.insert(len(prc_data.columns), "ma10", ma10)
+        prc_data.insert(len(prc_data.columns), "ma20", ma20)
+        prc_data.insert(len(prc_data.columns), "ma60", ma60)
+
+        return prc_data
 
     def request_SMA_data(self):
         # candle = self.request_candle_data()
@@ -195,3 +205,22 @@ class Dao():
         '''
         date_today = datetime.today()
         return date_today.strftime('20%y%m%d')
+
+    def request_user_ma(data: DataFrame, number1: int, ma1: int, number2: int, ma2: int):
+        '''
+         사용자 지정
+         이동평균선의 '1봉전' 지표를 생성하여 데이터프레임에 추가 후 반환
+         number1, number2 -> 이평선과의 괴리 정도
+         ma1, ma2 -> 이평선 기간
+        '''
+
+        user_ma1 = data["close"].rolling(ma1).mean() * number1
+        data.insert(len(data.columns), "user_ma1", user_ma1)
+
+        user_ma2 = data["close"].rolling(ma2).mean() * number2
+        data.insert(len(data.columns), "user_ma2", user_ma2)
+
+        data["user_ma1"] = data["user_ma1"].shift(1)
+        data["user_ma2"] = data["user_ma2"].shift(1)
+
+        return data
