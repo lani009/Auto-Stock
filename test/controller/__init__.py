@@ -1,6 +1,9 @@
 from PyQt5.QtWidgets import QApplication
+from PyQt5.QAxContainer import QAxWidget
+from PyQt5.QtCore import QEventLoop
 import sys
-from index import Index
+from ang import ang
+from controller import controller
 
 
 class Main():
@@ -8,7 +11,7 @@ class Main():
         print("Main() start")
 
         self.app = QApplication(sys.argv)
-        kiwoom = Index()
+        kiwoom = controller()
         kiwoom.run()
         self.app.exec_()
         print("hi")

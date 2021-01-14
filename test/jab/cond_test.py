@@ -44,7 +44,7 @@ class Main():
         condition_name_list = self.__kiwoom.dynamicCall("GetConditionNameList()")
         '''
         condition_name_list
-        ==============
+        =
         인덱스^조건식이름;인덱스^조건식이름;
         '''
 

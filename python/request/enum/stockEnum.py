@@ -11,6 +11,7 @@ class CandleUnit(Enum):
     SECOND = auto()
     MINUIT = auto()
     HOUR = auto()
+    DAY = auto()
 
 
 class RealTimeDataEnum(Enum):
@@ -25,3 +26,4 @@ class RealTimeDataEnum(Enum):
 
 class TrCode(Enum):
     OPT10080 = "주식분봉차트조회요청"
+    OPT10001 = "주식기본정보요청"
