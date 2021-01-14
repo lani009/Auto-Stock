@@ -1,10 +1,11 @@
+from request.enum.stockEnum import RealTimeDataEnum
+from typing import Any
 from pandas import Series, DataFrame
 import queue
 
 from request.enum.stockEnum import CandleUnit
 from request.enum.stockEnum import TrCode
 from entity.stock import Stock
-from entity.candleChart import CandleChart
 from request.kiwoom import Kiwoom
 from datetime import datetime
 
@@ -17,7 +18,7 @@ class Dao():
     '''
     __request_queue = queue.Queue(maxsize=1)    # size를 1로 막아두어, 하나 이상의 요청이 들어올 경우 해당 스레드는 blocking 되게함
     __kiwoom_obj: Kiwoom
-    __realtime_data_list = []     # 현재 reg 되어 있는 realtime data 들의 목록
+    __realtime_data_list: list[Any, list[RealTimeDataEnum], Stock]     # 현재 reg 되어 있는 realtime data 들의 목록
 
     def __new__(cls, *args, **kwargs):
         if not hasattr(cls, "_instance"):
@@ -28,14 +29,13 @@ class Dao():
         cls = type(self)
         if not hasattr(cls, "_init"):
             self.__kiwoom_obj = Kiwoom()
+            self.__realtime_data_list = []
             self.__kiwoom_obj.set_realtime_callback(self._realtime_data_processor)
             # TODO 로그인 작성
             cls._init = True
 
     def login(self):
         self.__kiwoom_obj.do_login()
-
-
 
     def request_tr_data(self, input_value: dict, trEnum: TrCode, nPrevNext: int, sScreenNo: str):
         '''
@@ -64,7 +64,7 @@ class Dao():
         self.__request_queue.get()
         return data
 
-    def request_candle_data(self, stock: Stock, unit: CandleUnit, tick: int) -> CandleChart:
+    def request_candle_data(self, stock: Stock, unit: CandleUnit, tick: int) -> DataFrame:
         '''
         키움 서버에 봉 차트 데이터를 요청한다.
 
@@ -85,21 +85,12 @@ class Dao():
                 "수정주가구분": 0
             }, TrCode.OPT10081, 0, 2000)
 
-
-
         elif unit == CandleUnit.MINUIT:
             data = self.__kiwoom_obj.get_tr_data({
                 "종목코드": stock.get_int_name,
                 "틱범위:": tick,
                 "수정주가구분": 0
-            }, TrCode.OPT10080, 0, 2000)
-
-        # elif unit == CandleUnit.SECOND:
-        #     data = self.__kiwoom_obj.get_tr_data({
-        #         "종목코드": stock.get_int_name,
-        #         "틱범위:": tick,
-        #         "수정주가구분": 0
-        #     }, TrCode.OPT10080, 0, 2000)
+            }, TrCode.OPT10080, 0, 2000, [], ["체결시간", "시가", "고가"])
 
         elif unit == CandleUnit.TICK:
             data = self.__kiwoom_obj.get_tr_data({
@@ -108,21 +99,7 @@ class Dao():
                 "수정주가구분": 0
             }, TrCode.OPT10079, 0, 2000)
 
-        return DataFrame(data)
-
-    def request_SMA_data(self):
-        # candle = self.request_candle_data()
-        # 캔들 최근 종가 1~5까지의 합/5
-        # 캔들 최근 종가 1~10까지의 합/10
-        # 캔들 최근 종가 1~20까지의 합/20
-        '''
-        이동평균 데이터
-            1분전 2분전 3분전 4분전 5분전
-        5
-        10
-        20
-        '''
-        pass
+        return data
 
     def reg_realtime_data(self, callback, stock: Stock, realtimeDataList):
         '''
@@ -183,16 +160,26 @@ class Dao():
 
         return stock_list
 
-    def _realtime_data_processor(self, sCode, sRealType, sRealData):
-        stock = self.request_stock_instance(sCode)
-        for realtime_list in self.__realtime_data_list:
-            if realtime_list[1] == stock:
-                realtime_list[0]()
+    def buy_stock(self):
+        pass
 
-    def get_today_date():
+    def sell_stock(self):
+        pass
+
+    def sell_all_stock(self):
+        pass
+
+    def get_today_date() -> datetime:
         '''
         당일의 날짜를 yyyymmdd로 반환한다.
         일봉 조회에서 사용됨.
         '''
         date_today = datetime.today()
         return date_today.strftime('20%y%m%d')
+
+    def _realtime_data_processor(self, sCode, sRealType, sRealData):
+        stock = self.request_stock_instance(sCode)
+        for realtime_list in self.__realtime_data_list:
+            if realtime_list[2] == stock:
+                realtime_list[0]()  # 콜백 함수 호출
+                break

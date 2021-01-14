@@ -10,7 +10,7 @@ class Signal(QThread):
     시그널 감지 클래스
     '''
     __refresh_time = None  # 조건 새로고침 주기 단위(초)
-    __condition_list = []
+    __condition_list: list[list[Condition, OfferStock]]   # condition 목록
     __realtime_data_temp = None
     stock: Stock
 
@@ -54,7 +54,7 @@ class Signal(QThread):
         '''
         매도 매수 조건이 만족될 경우, 거래를 진행시킨다.
         '''
-        condition_value, offer = self.check_condition(index, realtime_data)
+        condition_value, offer = self._check_condition(index, realtime_data)
         if condition_value:
             # 조건 충족
             if offer == OfferStock.BUYING:
@@ -64,7 +64,7 @@ class Signal(QThread):
                 # 매도 조건일 때
                 Dao().sell_stock()
 
-    def check_condition(self, index: int, realtime_data) -> (bool, OfferStock):
+    def _check_condition(self, index: int, realtime_data) -> list[bool, OfferStock]:
         '''
         매도, 매수 조건에 맞는지 판별
         '''
