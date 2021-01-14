@@ -123,7 +123,7 @@ class Kiwoom(QAxWidget):
             for m_data in self.__tr_rq_multi_data:
                 m_data_dict_temp[m_data] = self.dynamicCall(
                     "GetCommData(QString, QString, int, QString)", sTrCode, sRQName, i, m_data)
-                self.__tr_data_temp["multi_data"].append(m_data_dict_temp)
+            self.__tr_data_temp["multi_data"].append(m_data_dict_temp)
         self.__global_eventloop.exit()
 
     def _realtime_data_slot(self, sCode, sRealType, sRealData):

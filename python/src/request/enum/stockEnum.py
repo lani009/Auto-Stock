@@ -9,7 +9,7 @@ class OfferStock(Enum):
 class CandleUnit(Enum):
     TICK = auto()
     SECOND = auto()
-    MINUIT = auto()
+    MINUTE = auto()
     HOUR = auto()
     DAY = auto()
 

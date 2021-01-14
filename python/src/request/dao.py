@@ -87,7 +87,7 @@ class Dao():
                 "수정주가구분": 0
             }, TrCode.OPT10081, 0, 2000, [], ["일자", "시가", "현재가", "저가", "고가", "거래량"])
 
-        elif unit == CandleUnit.MINUIT:
+        elif unit == CandleUnit.MINUTE:
             data = self.__kiwoom_obj.get_tr_data({
                 "종목코드": stock.get_code_name(),
                 "틱범위:": tick,
@@ -101,7 +101,7 @@ class Dao():
                 "수정주가구분": 0
             }, TrCode.OPT10079, 0, 2000, [], ["체결시간", "시가", "현재가", "저가", "고가", "거래량"])
         
-        if unit == CandleUnit.MINUIT or unit == CandleUnit.TICK:
+        if unit == CandleUnit.MINUTE or unit == CandleUnit.TICK:
             time_list = [m_data["체결시간"] for m_data in data["multi_data"]]
         else:
             time_list = [m_data["일자"] for m_data in data["multi_data"]]
@@ -112,16 +112,14 @@ class Dao():
         high_list = [int(m_data["고가"]) for m_data in data["multi_data"]]
         volume_list = [int(m_data["거래량"]) for m_data in data["multi_data"]]
 
-        date_time_list = [] 
+        date_time_list = [] # datetime 객체 저장용 -> str to datetime
 
-        if unit == CandleUnit.MINUIT or unit == CandleUnit.TICK:
+        if unit == CandleUnit.MINUTE or unit == CandleUnit.TICK:
             for time_str in time_list:
-                print(time_str)
                 date_time = datetime.strptime(time_str.replace(" ", ""), "%Y%m%d%H%M%S")
                 date_time_list.append(date_time)
         else:
             for time_str in time_list:
-                print(time_str)
                 date_time = datetime.strptime(time_str.replace(" ", ""), "%Y%m%d")
                 date_time_list.append(date_time)
 
@@ -172,12 +170,12 @@ class Dao():
                                                 0, 3000, ["종목명", "PER", "PBR"], [])
         stock_temp = Stock(tr_data["single_data"]["종목명"], stock_code)
 
-        if tr_data["single_data"]["PER"] is "":
+        if tr_data["single_data"]["PER"] == "":
             stock_temp.set_per(0.0)
         else:
             stock_temp.set_per(float(tr_data["single_data"]["PER"]))
 
-        if tr_data["single_data"]["PBR"] is "":
+        if tr_data["single_data"]["PBR"] == "":
             stock_temp.set_pbr(0.0)
         else:
             stock_temp.set_pbr(float(tr_data["single_data"]["PBR"]))
