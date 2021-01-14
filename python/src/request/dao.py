@@ -80,40 +80,53 @@ class Dao():
         data = None
         if unit == CandleUnit.DAY:
             today_date = self.get_today_date()
+           
             data = self.__kiwoom_obj.get_tr_data({
-                "종목코드": stock.get_int_name,
+                "종목코드": stock.get_code_name(),
                 "기준일자:": today_date,
                 "수정주가구분": 0
-            }, TrCode.OPT10081, 0, 2000, [], ["체결시간", "시가", "현재가", "저가", "고가", "거래량"])
+            }, TrCode.OPT10081, 0, 2000, [], ["일자", "시가", "현재가", "저가", "고가", "거래량"])
 
         elif unit == CandleUnit.MINUIT:
             data = self.__kiwoom_obj.get_tr_data({
-                "종목코드": stock.get_int_name,
+                "종목코드": stock.get_code_name(),
                 "틱범위:": tick,
                 "수정주가구분": 0
             }, TrCode.OPT10080, 0, 2000, [], ["체결시간", "시가", "현재가", "저가", "고가", "거래량"])
 
         elif unit == CandleUnit.TICK:
             data = self.__kiwoom_obj.get_tr_data({
-                "종목코드": stock.get_int_name,
+                "종목코드": stock.get_code_name(),
                 "틱범위:": tick,
                 "수정주가구분": 0
             }, TrCode.OPT10079, 0, 2000, [], ["체결시간", "시가", "현재가", "저가", "고가", "거래량"])
+        
+        if unit == CandleUnit.MINUIT or unit == CandleUnit.TICK:
+            time_list = [m_data["체결시간"] for m_data in data["multi_data"]]
+        else:
+            time_list = [m_data["일자"] for m_data in data["multi_data"]]
+            
+        open_list = [int(m_data["시가"]) for m_data in data["multi_data"]]
+        close_list = [int(m_data["현재가"]) for m_data in data["multi_data"]]
+        low_list = [int(m_data["저가"]) for m_data in data["multi_data"]]
+        high_list = [int(m_data["고가"]) for m_data in data["multi_data"]]
+        volume_list = [int(m_data["거래량"]) for m_data in data["multi_data"]]
 
-        time_list = [m_data["체결시간"] for m_data in data["multi_data"]]
-        open_list = [m_data["시가"] for m_data in data["multi_data"]]
-        close_list = [m_data["현재가"] for m_data in data["multi_data"]]
-        low_list = [m_data["저가"] for m_data in data["multi_data"]]
-        high_list = [m_data["고가"] for m_data in data["multi_data"]]
-        volume_list = [m_data["거래량"] for m_data in data["multi_data"]]
+        date_time_list = [] 
 
-        date_time_list = []
+        if unit == CandleUnit.MINUIT or unit == CandleUnit.TICK:
+            for time_str in time_list:
+                print(time_str)
+                date_time = datetime.strptime(time_str.replace(" ", ""), "%Y%m%d%H%M%S")
+                date_time_list.append(date_time)
+        else:
+            for time_str in time_list:
+                print(time_str)
+                date_time = datetime.strptime(time_str.replace(" ", ""), "%Y%m%d")
+                date_time_list.append(date_time)
 
-        for time in time_list:
-            date_time = datetime.strptime(time, "%Y%m%d%H%M")
-            date_time_list.append(date_time)
 
-        dict_data = {"time": date_time_list, "open": int(open_list), "close": int(close_list), "low": int(low_list), "high": int(high_list), "volume": int(volume_list)}
+        dict_data = {"time": date_time_list, "open": open_list, "close": close_list, "low": low_list, "high": high_list, "volume": volume_list}
         prc_data = DataFrame(dict_data)
 
         ma5 = (prc_data.close.rolling(5).mean())
@@ -126,7 +139,7 @@ class Dao():
         prc_data.insert(len(prc_data.columns), "ma20", ma20)
         prc_data.insert(len(prc_data.columns), "ma60", ma60)
 
-        return data
+        return prc_data
 
     def reg_realtime_data(self, callback, stock: Stock, realtimeDataList):
         '''
@@ -208,7 +221,7 @@ class Dao():
     def sell_all_stock(self):
         pass
 
-    def get_today_date() -> datetime:
+    def get_today_date(self) -> datetime:
         '''
         당일의 날짜를 datetime으로 반환한다.
         일봉 조회에서 사용됨.
