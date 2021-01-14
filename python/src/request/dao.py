@@ -97,25 +97,27 @@ class Dao():
         elif unit == CandleUnit.TICK:
             data = self.__kiwoom_obj.get_tr_data({
                 "종목코드": stock.get_code_name(),
-                "틱범위:": tick,
+                "틱범위": tick,
                 "수정주가구분": 0
             }, TrCode.OPT10079, 0, 2000, [], ["체결시간", "시가", "현재가", "저가", "고가", "거래량"])
         
         if unit == CandleUnit.MINUTE or unit == CandleUnit.TICK:
+            
             time_list = [m_data["체결시간"] for m_data in data["multi_data"]]
         else:
             time_list = [m_data["일자"] for m_data in data["multi_data"]]
             
-        open_list = [int(m_data["시가"]) for m_data in data["multi_data"]]
-        close_list = [int(m_data["현재가"]) for m_data in data["multi_data"]]
-        low_list = [int(m_data["저가"]) for m_data in data["multi_data"]]
-        high_list = [int(m_data["고가"]) for m_data in data["multi_data"]]
+        open_list = [abs(int(m_data["시가"])) for m_data in data["multi_data"]]
+        close_list = [abs(int(m_data["현재가"])) for m_data in data["multi_data"]]
+        low_list = [abs(int(m_data["저가"])) for m_data in data["multi_data"]]
+        high_list = [abs(int(m_data["고가"])) for m_data in data["multi_data"]]
         volume_list = [int(m_data["거래량"]) for m_data in data["multi_data"]]
 
         date_time_list = [] # datetime 객체 저장용 -> str to datetime
 
         if unit == CandleUnit.MINUTE or unit == CandleUnit.TICK:
             for time_str in time_list:
+                print(time_str)
                 date_time = datetime.strptime(time_str.replace(" ", ""), "%Y%m%d%H%M%S")
                 date_time_list.append(date_time)
         else:
