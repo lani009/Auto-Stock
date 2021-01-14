@@ -105,7 +105,14 @@ class Dao():
         low_list = [m_data["저가"] for m_data in data["multi_data"]]
         high_list = [m_data["고가"] for m_data in data["multi_data"]]
         volume_list = [m_data["거래량"] for m_data in data["multi_data"]]
-        dict_data = {"time": time_list, "open": open_list, "close": close_list, "low": low_list, "high": high_list, "volume": volume_list}
+
+        date_time_list = []
+
+        for time in time_list:
+            date_time = datetime.strptime(time, "%Y%m%d%H%M")
+            date_time_list.append(date_time)
+
+        dict_data = {"time": date_time_list, "open": int(open_list), "close": int(close_list), "low": int(low_list), "high": int(high_list), "volume": int(volume_list)}
         prc_data = DataFrame(dict_data)
 
         ma5 = (prc_data.close.rolling(5).mean())
