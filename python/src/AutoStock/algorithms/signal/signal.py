@@ -1,3 +1,4 @@
+from typing import List, Tuple, Union
 from PyQt5.QtCore import QThread
 from algorithms.condition import Condition
 from request.dao import Dao
@@ -9,10 +10,10 @@ class Signal(QThread):
     '''
     시그널 감지 클래스
     '''
-    __refresh_time = None  # 조건 새로고침 주기 단위(초)
-    __condition_list: list[list[Condition, OfferStock]]   # condition 목록
+    __refresh_time: int = None  # 조건 새로고침 주기 단위(초)
+    __condition_list: List[Tuple[Condition, OfferStock]] = None   # condition 목록
     __realtime_data_temp = None
-    stock: Stock
+    stock: Stock = None     # 할당 받은 주식 종목
 
     def __init__(self):
         pass
@@ -20,7 +21,7 @@ class Signal(QThread):
     def run(self):
         pass
 
-    def attach_condition(self, condition: Condition, offer) -> None:
+    def attach_condition(self, condition: Condition, offer: OfferStock) -> None:
         '''
         시그널 이벤트 등록
         '''
@@ -30,7 +31,7 @@ class Signal(QThread):
     def detach_condition(self):
         pass
 
-    def get_condition_list(self):
+    def get_condition_list(self) -> List[Tuple[Condition, OfferStock]]:
         return self.__condition_list
 
     def realtime_data_slot(self, sCode: str, sRealType: str, sRealData: str, sRecordName: str, sPrevNext: str):
@@ -64,7 +65,7 @@ class Signal(QThread):
                 # 매도 조건일 때
                 Dao().sell_stock()
 
-    def _check_condition(self, index: int, realtime_data) -> list[bool, OfferStock]:
+    def _check_condition(self, index: int, realtime_data):
         '''
         매도, 매수 조건에 맞는지 판별
         '''

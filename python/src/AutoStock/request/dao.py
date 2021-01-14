@@ -1,14 +1,11 @@
 import time
-from typing import List, Type, Union
-from request.enum.stockEnum import RealTimeDataEnum
-from pandas import DataFrame
+from typing import Callable, Dict, List, Tuple, Union
 import queue
-
-from request.enum.stockEnum import CandleUnit
-from request.enum.stockEnum import TrCode
-from entity.stock import Stock
-from request.kiwoom import Kiwoom
 from datetime import datetime
+from request.enum.stockEnum import RealTimeDataEnum, CandleUnit, TrCode
+from request.kiwoom import Kiwoom
+from pandas import DataFrame
+from entity.stock import Stock
 
 
 class Dao():
@@ -21,7 +18,7 @@ class Dao():
     __kiwoom_obj: Kiwoom
     __realtime_data_list: List[Union[RealTimeDataEnum, Stock]]     # 현재 reg 되어 있는 realtime data 들의 목록
 
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls, *_, **__):
         if not hasattr(cls, "_instance"):
             cls._instance = super().__new__(cls)
         return cls._instance
@@ -38,9 +35,15 @@ class Dao():
     def login(self):
         self.__kiwoom_obj.do_login()
 
-    def request_tr_data(self, input_value: dict, trEnum: TrCode, nPrevNext: int, sScreenNo: str):
+    def request_tr_data(self, input_value: dict, trEnum: TrCode, nPrevNext: int, sScreenNo: str,
+                        rqSingleData: Dict[str, str], rqMultiData: Dict[str, str]):
         '''
         키움 서버에 tr 데이터를 요청한다.
+
+        Args:
+            input_value: 하단 참조.
+
+            trEnum: TrCode 타입
 
         input_value
         -----------
@@ -61,7 +64,7 @@ class Dao():
         SetInputValue("거래량구분", "입력값 3");
         '''
         self.__request_queue.put(0)
-        data = self.__kiwoom_obj.get_tr_data(input_value, trEnum, nPrevNext, sScreenNo)
+        data = self.__kiwoom_obj.get_tr_data(input_value, trEnum, nPrevNext, sScreenNo, rqSingleData ,rqMultiData)
         self.__request_queue.get()
         return data
 
@@ -80,7 +83,7 @@ class Dao():
         data = None
         if unit == CandleUnit.DAY:
             today_date = self.get_today_date()
-           
+
             data = self.__kiwoom_obj.get_tr_data({
                 "종목코드": stock.get_code_name(),
                 "기준일자:": today_date,
@@ -100,24 +103,23 @@ class Dao():
                 "틱범위": tick,
                 "수정주가구분": 0
             }, TrCode.OPT10079, 0, 2000, [], ["체결시간", "시가", "현재가", "저가", "고가", "거래량"])
-        
+
         if unit == CandleUnit.MINUTE or unit == CandleUnit.TICK:
-            
+
             time_list = [m_data["체결시간"] for m_data in data["multi_data"]]
         else:
             time_list = [m_data["일자"] for m_data in data["multi_data"]]
-            
-        open_list = [abs(int(m_data["시가"])) for m_data in data["multi_data"]]
-        close_list = [abs(int(m_data["현재가"])) for m_data in data["multi_data"]]
-        low_list = [abs(int(m_data["저가"])) for m_data in data["multi_data"]]
-        high_list = [abs(int(m_data["고가"])) for m_data in data["multi_data"]]
-        volume_list = [int(m_data["거래량"]) for m_data in data["multi_data"]]
 
-        date_time_list = [] # datetime 객체 저장용 -> str to datetime
+        open_list = [abs(int(m_data["시가"])) for m_data in data["multi_data"]]      # 시가
+        close_list = [abs(int(m_data["현재가"])) for m_data in data["multi_data"]]   # 종가
+        low_list = [abs(int(m_data["저가"])) for m_data in data["multi_data"]]      # 저가
+        high_list = [abs(int(m_data["고가"])) for m_data in data["multi_data"]]     # 고가
+        volume_list = [int(m_data["거래량"]) for m_data in data["multi_data"]]      # 거래량
+
+        date_time_list = []  # datetime 객체 저장용 -> str to datetime
 
         if unit == CandleUnit.MINUTE or unit == CandleUnit.TICK:
             for time_str in time_list:
-                print(time_str)
                 date_time = datetime.strptime(time_str.replace(" ", ""), "%Y%m%d%H%M%S")
                 date_time_list.append(date_time)
         else:
@@ -125,32 +127,26 @@ class Dao():
                 date_time = datetime.strptime(time_str.replace(" ", ""), "%Y%m%d")
                 date_time_list.append(date_time)
 
-
         dict_data = {"time": date_time_list, "open": open_list, "close": close_list, "low": low_list, "high": high_list, "volume": volume_list}
         prc_data = DataFrame(dict_data)
 
-        ma5 = (prc_data.close.rolling(5).mean())
-        ma10 = (prc_data.close.rolling(10).mean())
-        ma20 = (prc_data.close.rolling(20).mean())
-        ma60 = (prc_data.close.rolling(60).mean())
-
-        prc_data.insert(len(prc_data.columns), "ma5", ma5)
-        prc_data.insert(len(prc_data.columns), "ma10", ma10)
-        prc_data.insert(len(prc_data.columns), "ma20", ma20)
-        prc_data.insert(len(prc_data.columns), "ma60", ma60)
+        prc_data.insert(len(prc_data.columns), "ma5", prc_data.close.rolling(5).mean())
+        prc_data.insert(len(prc_data.columns), "ma10", prc_data.close.rolling(10).mean())
+        prc_data.insert(len(prc_data.columns), "ma20", prc_data.close.rolling(20).mean())
+        prc_data.insert(len(prc_data.columns), "ma60", prc_data.close.rolling(60).mean())
 
         return prc_data
 
-    def reg_realtime_data(self, callback, stock: Stock, realtimeDataList):
+    def reg_realtime_data(self, callback: Callable, stock: Stock, realtimeDataList: List[RealTimeDataEnum]):
         '''
         해당 주식의 실시간 데이터 처리 콜백을 등록한다.
         '''
         self.__request_queue.put(0)
-        self.__realtime_data_list.append([callback, realtimeDataList, stock])     # 실시간 데이터 처리 목록에 추가
-        self.__kiwoom_obj.set_realtime_reg(2000, [stock], realtimeDataList)
+        self.__realtime_data_list.append([callback, realtimeDataList, stock.get_code_name()])     # 실시간 데이터 처리 목록에 추가
+        self.__kiwoom_obj.set_realtime_reg(2000, [stock.get_code_name()], realtimeDataList)
         self.__request_queue.get()
 
-    def request_condition_list(self):
+    def request_condition_list(self) -> List[Tuple[str, str]]:
         '''
         조건식 목록을 반환한다.
 
@@ -164,27 +160,31 @@ class Dao():
         '''
         return self.__kiwoom_obj.get_condition_list()
 
-    def request_stock_instance(self, stock_code):
+    def request_stock_instance(self, stock_code: str):
         '''
         종목 코드에 해당하는 Stock 객체를 반환한다.
+
+        Param
+        ---------
+        stock_code: 종목 코드
         '''
         tr_data = self.__kiwoom_obj.get_tr_data({"종목코드": stock_code}, TrCode.OPT10001,
                                                 0, 3000, ["종목명", "PER", "PBR"], [])
-        stock_temp = Stock(tr_data["single_data"]["종목명"], stock_code)
+        stock_obj = Stock(tr_data["single_data"]["종목명"], stock_code)
 
         if tr_data["single_data"]["PER"] == "":
-            stock_temp.set_per(0.0)
+            stock_obj.set_per(0.0)
         else:
-            stock_temp.set_per(float(tr_data["single_data"]["PER"]))
+            stock_obj.set_per(float(tr_data["single_data"]["PER"]))
 
         if tr_data["single_data"]["PBR"] == "":
-            stock_temp.set_pbr(0.0)
+            stock_obj.set_pbr(0.0)
         else:
-            stock_temp.set_pbr(float(tr_data["single_data"]["PBR"]))
+            stock_obj.set_pbr(float(tr_data["single_data"]["PBR"]))
 
-        return stock_temp
+        return stock_obj
 
-    def request_condition_stock(self, index, cond_name):
+    def request_condition_stock(self, index: str, cond_name: str) -> List[Stock]:
         '''
         1초에 5개 정도의 주식만 불러올 수 있으니 주의!!!!!
         =================
@@ -202,13 +202,13 @@ class Dao():
         [Stock, Stock, ...]
         Stock 객체를 list로 wrapping하여 반환한다.
         '''
-        stock_code_list = self.__kiwoom_obj.get_condition_stock("3000", cond_name, index)
+        stock_code_list = self.__kiwoom_obj.get_condition_stock("3000", cond_name, index)   # 종목 코드 리스트
 
         stock_list = []     # Stock 객체 리스트
 
         for stock_code in stock_code_list:
             stock_list.append(self.request_stock_instance(stock_code))
-            time.sleep(0.168)
+            time.sleep(0.168)   # QoS 안걸리는 최적의 숫자!
 
         return stock_list
 
@@ -221,27 +221,25 @@ class Dao():
     def sell_all_stock(self):
         pass
 
-    def get_today_date(self) -> datetime:
+    def get_today_date(self) -> str:
         '''
-        당일의 날짜를 datetime으로 반환한다.
+        당일의 날짜를 yyyymmdd로 반환한다.
+
         일봉 조회에서 사용됨.
         '''
         date_today = datetime.today()
-        return date_today.strftime('20%y%m%d')
+        return date_today.strftime('%Y%m%d')
 
-    def _realtime_data_processor(self, sCode, sRealType, sRealData):
-        stock = self.request_stock_instance(sCode)
-        for realtime_list in self.__realtime_data_list:
-            if realtime_list[2] == stock:
-                realtime_list[0]()  # 콜백 함수 호출
-                break
-
-    def request_user_ma(self, data: DataFrame, number1: int, ma1: int, number2: int, ma2: int):
+    def request_user_ma(self, data: DataFrame, number1: int, ma1: int, number2: int, ma2: int) -> DataFrame:
         '''
-         사용자 지정
-         이동평균선의 '1봉전' 지표를 생성하여 데이터프레임에 추가 후 반환
-         number1, number2 -> 이평선과의 괴리 정도
-         ma1, ma2 -> 이평선 기간
+        사용자 지정
+        이동평균선의 '1봉전' 지표를 생성하여 데이터프레임에 추가 후 반환
+
+        param
+        ----------
+        number1, number2 -> 이평선과의 괴리 정도
+
+        ma1, ma2 -> 이평선 기간
         '''
         user_ma1 = data["close"].rolling(ma1).mean() * number1
         data.insert(len(data.columns), "user_ma1", user_ma1)
@@ -253,3 +251,11 @@ class Dao():
         data["user_ma2"] = data["user_ma2"].shift(1)
 
         return data
+
+    def _realtime_data_processor(self, sCode: str, sRealType, sRealData):
+        _ = (sRealData, sRealType)  # warning avoid
+        stock = self.request_stock_instance(sCode)
+        for realtime_list in self.__realtime_data_list:
+            if realtime_list[2] == stock:
+                realtime_list[0]()  # 콜백 함수 호출
+                break

@@ -5,7 +5,7 @@ class Condition(metaclass=ABCMeta):
     '''
     매수, 매도 시점에 대한 조건식
     '''
-    def __init__():
+    def __init__(self):
         pass
 
     @abstractmethod
