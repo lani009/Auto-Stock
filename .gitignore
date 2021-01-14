@@ -4,3 +4,4 @@ target/
 settings.json
 __pycache__/
 .flake8
+.pylintrc
