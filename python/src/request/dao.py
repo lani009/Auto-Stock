@@ -1,6 +1,6 @@
 from request.enum.stockEnum import RealTimeDataEnum
 from typing import Any
-from pandas import Series, DataFrame
+from pandas import DataFrame
 import queue
 
 from request.enum.stockEnum import CandleUnit
