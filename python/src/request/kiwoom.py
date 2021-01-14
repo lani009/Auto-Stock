@@ -64,7 +64,7 @@ class Kiwoom(QAxWidget):
         self.__global_eventloop.exec_()
         return self.__condition_name_list
 
-    def get_condition_stock(self, sScrNo, index, cond_name):
+    def get_condition_stock(self, sScrNo, cond_name, index):
         '''
         해당 조건식을 만족하는 종목 코드를 리스트 형태로 반환
 
@@ -107,23 +107,21 @@ class Kiwoom(QAxWidget):
         for k, v in input_value.items():
             self.dynamicCall("SetInputValue(QString, QString)", k, v)
 
-    def _tr_data_slot(self, sScrNo, sTrCode, sRecordName, sPrevNext):
+    def _tr_data_slot(self, sScrNo, sRQName, sTrCode, sPrevNext):
         '''
         CommRqData 처리용 슬롯
         '''
-        self.__tr_data_temp.clear()     # 이전에 저장되어 있던 임시 tr_data 삭제.
-
+        self.__tr_data_temp = {}     # 이전에 저장되어 있던 임시 tr_data 삭제.
         self.__tr_data_temp["single_data"] = {}     # empty dict 선언
         for s_data in self.__tr_rq_single_data:
             self.__tr_data_temp["single_data"][s_data] = self.dynamicCall(
-                "GetCommData(QString, QString, int, QString)", sScrNo, sTrCode, 0, s_data)
+                "GetCommData(QString, QString, int, QString)", sTrCode, sRQName, 0, s_data).replace(" ", "")
 
         self.__tr_data_temp["multi_data"] = {}      # empty dict 선언
         for i in range(500):
             for m_data in self.__tr_rq_multi_data:
                 self.__tr_data_temp["multi_data"][m_data] = self.dynamicCall(
-                    "GetCommData(QString, QString, int, QString)", sScrNo, sTrCode, i, m_data)
-
+                    "GetCommData(QString, QString, int, QString)", sTrCode, sRQName, i, m_data)
         self.__global_eventloop.exit()
 
     def _realtime_data_slot(self, sCode, sRealType, sRealData):
@@ -135,19 +133,19 @@ class Kiwoom(QAxWidget):
     def _login_slot(self, errNo):
         self.__global_eventloop.exit()
 
-    def _send_condition_slot(self, sScrNo, strCodeList, strConditionName, nIndex, nNext):
+    def _send_condition_slot(self, sScrNo, sCodeList, sCondName, nIndex, nNext):
         '''
         SendCondition 처리용 슬롯
         '''
-        self.__condition_stock_list = strCodeList[:-1].split(";")
-        self.__event_loop.exit()
+        self.__condition_stock_list = sCodeList[:-1].split(";")
+        self.__global_eventloop.exit()
 
     def _condition_ver_slot(self, lRet, sMsg):
         '''
         GetConditionLoad 처리용 슬롯
         '''
-        self.__condition_name_list.clear()  # 이전에 저장되어 있던 조건식 들을 삭제한다.
-        condition_name_list = self.__kiwoom.dynamicCall("GetConditionNameList()")
+        self.__condition_name_list = []  # 이전에 저장되어 있던 조건식 들을 삭제한다.
+        condition_name_list = self.dynamicCall("GetConditionNameList()")
 
         '''
         condition_name_list 데이터 형태
@@ -156,7 +154,7 @@ class Kiwoom(QAxWidget):
         '''
 
         for cond_index_name in condition_name_list[:-1].split(";"):
-            self.__condition_list.append(cond_index_name.split("^"))
+            self.__condition_name_list.append(cond_index_name.split("^"))
 
         self.__global_eventloop.exit()
 

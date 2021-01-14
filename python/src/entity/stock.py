@@ -31,7 +31,7 @@ class Stock():
         '''
         종목 코드 반환
         '''
-        return self.__stock_name_by_int
+        return self.__stock_name_by_code
 
     def get_per(self):
         return self.__per

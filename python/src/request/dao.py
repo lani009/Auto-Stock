@@ -1,5 +1,6 @@
+import time
+from typing import List, Type, Union
 from request.enum.stockEnum import RealTimeDataEnum
-from typing import Any
 from pandas import DataFrame
 import queue
 
@@ -18,7 +19,7 @@ class Dao():
     '''
     __request_queue = queue.Queue(maxsize=1)    # size를 1로 막아두어, 하나 이상의 요청이 들어올 경우 해당 스레드는 blocking 되게함
     __kiwoom_obj: Kiwoom
-    __realtime_data_list: list[Any, list[RealTimeDataEnum], Stock]     # 현재 reg 되어 있는 realtime data 들의 목록
+    __realtime_data_list: List[Union[RealTimeDataEnum, Stock]]     # 현재 reg 되어 있는 realtime data 들의 목록
 
     def __new__(cls, *args, **kwargs):
         if not hasattr(cls, "_instance"):
@@ -155,16 +156,26 @@ class Dao():
         종목 코드에 해당하는 Stock 객체를 반환한다.
         '''
         tr_data = self.__kiwoom_obj.get_tr_data({"종목코드": stock_code}, TrCode.OPT10001,
-                                                0, 2000, ["종목명", "PER", "PBR"], [])
-
+                                                0, 3000, ["종목명", "PER", "PBR"], [])
         stock_temp = Stock(tr_data["single_data"]["종목명"], stock_code)
-        print(tr_data["single_data"]["PER"])
-        # stock_temp.set_per(float(tr_data["single_data"]["PER"]))
-        # stock_temp.set_pbr(float(tr_data["single_data"]["PBR"]))
+
+        if tr_data["single_data"]["PER"] is "":
+            stock_temp.set_per(0.0)
+        else:
+            stock_temp.set_per(float(tr_data["single_data"]["PER"]))
+
+        if tr_data["single_data"]["PBR"] is "":
+            stock_temp.set_pbr(0.0)
+        else:
+            stock_temp.set_pbr(float(tr_data["single_data"]["PBR"]))
+
         return stock_temp
 
     def request_condition_stock(self, index, cond_name):
         '''
+        1초에 5개 정도의 주식만 불러올 수 있으니 주의!!!!!
+        =================
+
         해당 조건식에 부합하는 주식 종목을 반환한다.
 
         param
@@ -178,11 +189,13 @@ class Dao():
         [Stock, Stock, ...]
         Stock 객체를 list로 wrapping하여 반환한다.
         '''
-        stock_code_list = self.__kiwoom_obj.get_condition_stock(2000, index, cond_name)
+        stock_code_list = self.__kiwoom_obj.get_condition_stock("3000", cond_name, index)
 
         stock_list = []     # Stock 객체 리스트
+
         for stock_code in stock_code_list:
             stock_list.append(self.request_stock_instance(stock_code))
+            time.sleep(0.168)
 
         return stock_list
 
@@ -197,7 +210,7 @@ class Dao():
 
     def get_today_date() -> datetime:
         '''
-        당일의 날짜를 yyyymmdd로 반환한다.
+        당일의 날짜를 datetime으로 반환한다.
         일봉 조회에서 사용됨.
         '''
         date_today = datetime.today()
@@ -209,14 +222,14 @@ class Dao():
             if realtime_list[2] == stock:
                 realtime_list[0]()  # 콜백 함수 호출
                 break
-    def request_user_ma(data: DataFrame, number1: int, ma1: int, number2: int, ma2: int):
+
+    def request_user_ma(self, data: DataFrame, number1: int, ma1: int, number2: int, ma2: int):
         '''
          사용자 지정
          이동평균선의 '1봉전' 지표를 생성하여 데이터프레임에 추가 후 반환
          number1, number2 -> 이평선과의 괴리 정도
          ma1, ma2 -> 이평선 기간
         '''
-
         user_ma1 = data["close"].rolling(ma1).mean() * number1
         data.insert(len(data.columns), "user_ma1", user_ma1)
 
