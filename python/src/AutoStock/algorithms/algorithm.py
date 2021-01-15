@@ -35,7 +35,7 @@ class Algorithm(metaclass=ABCMeta):
 
     @abstractmethod
     @staticmethod
-    def filter_list(self) -> list:
+    def filter_list() -> list:
         '''
         거래 대상 주식 필터링
         '''
