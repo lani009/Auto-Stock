@@ -1,7 +1,8 @@
+from typing import Callable, Dict, List, Tuple
+from request.enum.stockEnum import RealTimeDataEnum, TrCode
+from request.enum.errCode import ErrCode
 from PyQt5.QAxContainer import QAxWidget
 from PyQt5.QtCore import QEventLoop
-
-from request.enum.stockEnum import TrCode
 
 
 class Kiwoom(QAxWidget):
@@ -17,13 +18,13 @@ class Kiwoom(QAxWidget):
     이벤트루프를 적용하여 get_tr_data 등의 메소드가 thread safe 해야함
     '''
 
-    __global_eventloop = None       # 동기처리를 위한 전역 EventLoop
-    __tr_data_temp = {}             # GetTrData의 결과가 임시적으로 담기는 곳
-    __condition_name_list = []      # 조건식 이름과 인덱스가 임시적으로 담기는 곳
-    __condition_stock_list = None   # 조건식 필터링 결과가 임시적으로 담기는 곳
-    __tr_rq_single_data = None      # 사용자 요청 싱글데이터
-    __tr_rq_multi_data = None       # 사용자 요청 멀티데이터
-    __realtime_data_callback = None     # 실시간 데이터 콜백
+    __global_eventloop: QEventLoop = None               # 동기처리를 위한 전역 EventLoop
+    __tr_data_temp: Dict[str, Dict[str, str]] = None    # GetTrData의 결과가 임시적으로 담기는 곳
+    __condition_name_list: List[Tuple[str, str]] = None        # 조건식 이름과 인덱스가 임시적으로 담기는 곳
+    __condition_stock_list: List[str] = None            # 조건식 필터링 결과가 임시적으로 담기는 곳
+    __tr_rq_single_data: Dict[str, str] = None          # 사용자 요청 싱글데이터
+    __tr_rq_multi_data: Dict[str, str] = None           # 사용자 요청 멀티데이터
+    __realtime_data_callback: Callable = None           # 실시간 데이터 콜백
 
     def __init__(self):
         super().__init__()
@@ -35,7 +36,8 @@ class Kiwoom(QAxWidget):
         self.dynamicCall("CommConnect()")
         self.__global_eventloop.exec_()
 
-    def get_tr_data(self, inputValue: dict, trEnum: TrCode, nPrevNext: int, sScrNo: str, rqSingleData, rqMultiData):
+    def get_tr_data(self, inputValue: Dict[str, str], trEnum: TrCode, nPrevNext: int, sScrNo: str,
+                    rqSingleData: Dict[str, str], rqMultiData: Dict[str, str]):
         '''
         키움 API에 Tr 데이터를 요청한다.
         '''
@@ -54,31 +56,29 @@ class Kiwoom(QAxWidget):
 
         return value
         ------------
-        [
-            [인덱스번호, 조건식 이름],
-            [인덱스번호, 조건식 이름],
-            ...
-        ]
+        List[index, name]
         '''
         self.dynamicCall("GetConditionLoad()")
         self.__global_eventloop.exec_()
         return self.__condition_name_list
 
-    def get_condition_stock(self, sScrNo, cond_name, index):
+    def get_condition_stock(self, sScrNo: str, cond_name: str, index: str) -> List[str]:
         '''
         해당 조건식을 만족하는 종목 코드를 리스트 형태로 반환
 
         param
         -------
-        index: 조건식 인덱스 번호
+        sScrNo: 스크린번호
 
         cond_name: 조건식 이름
+
+        index: 조건식 인덱스 번호
         '''
         self.dynamicCall("SendCondition(QString, QString, int, int)", sScrNo, cond_name, index, 0)
         self.__global_eventloop.exec_()
         return self.__condition_stock_list
 
-    def set_realtime_reg(self, sScrNo: str, stockList, realtimeDataList):
+    def set_realtime_reg(self, sScrNo: str, stockList: List[str], realtimeDataList: RealTimeDataEnum):
         '''
         realtime data를 받아올 수 있도록 레지스터링 한다.
 
@@ -92,15 +92,15 @@ class Kiwoom(QAxWidget):
             raise RuntimeError("realtime data callback 함수가 설정되지 않았습니다.")
 
         fid_list = "".join("{};".format(fid.value) for fid in realtimeDataList)[:-1]  # fid str list
-        stock_code_list = "".join("{};".format(stock.get_code_name()) for stock in stockList)[:-1]  # stock code str list
+        stock_code_list = "".join("{};".format(stock) for stock in stockList)[:-1]  # stock code str list
 
         self.dynamicCall("SetRealReg(QString, QString, QString, QString)", sScrNo, stock_code_list,
                          fid_list, 1)
 
-    def set_realtime_callback(self, callback):
+    def set_realtime_callback(self, callback: Callable):
         self.__realtime_data_callback = callback
 
-    def _set_input_values(self, input_value: dict):
+    def _set_input_values(self, input_value: Dict[str, str]):
         '''
         SetInputVlaue() 동적 호출 iteration 용도
         '''
@@ -111,6 +111,8 @@ class Kiwoom(QAxWidget):
         '''
         CommRqData 처리용 슬롯
         '''
+        _ = (sScrNo, sPrevNext)     # warning avoid
+
         self.__tr_data_temp = {}     # 이전에 저장되어 있던 임시 tr_data 삭제.
         self.__tr_data_temp["single_data"] = {}     # empty dict 선언
         for s_data in self.__tr_rq_single_data:
@@ -133,9 +135,10 @@ class Kiwoom(QAxWidget):
         self.__realtime_data_callback(sCode, sRealType, sRealData)
 
     def _login_slot(self, errNo):
+        print(ErrCode(errNo))
         self.__global_eventloop.exit()
 
-    def _send_condition_slot(self, sScrNo, sCodeList, sCondName, nIndex, nNext):
+    def _send_condition_slot(self, _sScrNo, sCodeList, _sCondName, _nIndex, _nNext):
         '''
         SendCondition 처리용 슬롯
         '''
@@ -148,12 +151,6 @@ class Kiwoom(QAxWidget):
         '''
         self.__condition_name_list = []  # 이전에 저장되어 있던 조건식 들을 삭제한다.
         condition_name_list = self.dynamicCall("GetConditionNameList()")
-
-        '''
-        condition_name_list 데이터 형태
-        ==============
-        인덱스^조건식이름;인덱스^조건식이름;
-        '''
 
         for cond_index_name in condition_name_list[:-1].split(";"):
             self.__condition_name_list.append(cond_index_name.split("^"))
