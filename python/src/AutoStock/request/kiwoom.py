@@ -1,5 +1,5 @@
 from typing import Any, Callable, Dict, List, Tuple
-from request.enum.stockEnum import RealTimeDataEnum, TrCode
+from request.enum.stockEnum import RealTimeDataEnum, TrCode, TrClassification
 from request.enum.errCode import ErrCode
 from PyQt5.QAxContainer import QAxWidget
 from PyQt5.QtCore import QEventLoop
@@ -25,6 +25,8 @@ class Kiwoom(QAxWidget):
     __tr_rq_single_data: Dict[str, str] = None          # 사용자 요청 싱글데이터
     __tr_rq_multi_data: Dict[str, str] = None           # 사용자 요청 멀티데이터
     __realtime_data_callback: Callable = None           # 실시간 데이터 콜백
+    __server_msg_callback: Callable = None
+    __chejan_data_callback: Callable = None
 
     def __init__(self):
         super().__init__()
@@ -134,6 +136,47 @@ class Kiwoom(QAxWidget):
         '''
         self.__realtime_data_callback = callback
 
+    def set_server_msg_callback(self, callback: Callable):
+        '''서버로 부터 메시지가 도착했을 때, 이를 출력할 콜백을 설정한다.
+        '''
+        self.__server_msg_callback = callback
+
+    def set_chejan_data_callback(self, callback: Callable):
+        self.__chejan_data_callback = callback
+
+    def send_order(self, sScrNo: str, sAccNo: str, nOrderType: TrClassification, sCode: str, nQty: int,
+                   nPrice: int, sHogaGb, sOrgOrderNo: str):
+        '''주식 주문
+
+        Parameters
+        ----------
+        sScrNo :
+            스크린번호
+
+        sAccNo :
+            계좌번호
+
+        nOrderType :
+            주문 유형
+
+        sCode :
+            종목코드
+
+        nQty :
+            주문수량
+
+        nPrice :
+            주문가격
+
+        sHogaGb :
+            거래구분
+
+        sOrgOrderNo :
+            원주문번호
+        '''
+        self.dynamicCall("SendOrder(QString, QString, QString, QString, QString, QString, QString, QString, QString)",
+                         TrCode.SEND_ORDER.value, sScrNo, sAccNo, nOrderType.value, sCode, nQty, nPrice, sHogaGb, sOrgOrderNo)
+
     def parse_realtime(self, sCode: str, realtimeDataList: List[RealTimeDataEnum]) -> Dict[RealTimeDataEnum, Any]:
         '''
         realtime_callback이 호출 되었을 경우에만 사용이 가능하다.
@@ -206,6 +249,25 @@ class Kiwoom(QAxWidget):
 
         self.__global_eventloop.exit()
 
+    def _server_msg_slot(self, _sScrNo, sRQName, sTrCode, sMsg):
+        '''
+        서버 통신 응답 처리용 슬롯
+        '''
+        if self.__server_msg_callback is not None:
+            self.__server_msg_callback(TrCode(sRQName.replace(" ", ""), sMsg))
+
+    def _chejan_data_slot(self, sGubun, nItemCnt, sFidList):
+        '''체결 잔고데이터 이벤트 처리용 슬롯
+        '''
+        fid_list = sFidList[:-1].split(";")
+
+        chejan_fid_data = {}
+        for fid in fid_list:
+            chejan_fid_data[fid] = self.dynamicCall("GetChejanData(QString)", fid)
+
+        if self.__chejan_data_callback is not None:
+            self.__chejan_data_callback(chejan_fid_data)
+
     def __reg_all_slot(self):
         '''
         키움 API의 이벤트 슬롯을 전부 다 등록
@@ -215,3 +277,5 @@ class Kiwoom(QAxWidget):
         self.OnReceiveConditionVer.connect(self._condition_ver_slot)  # 조건식 데이터 슬롯
         self.OnReceiveTrCondition.connect(self._send_condition_slot)  # 조건식 종목 슬롯
         self.OnReceiveRealData.connect(self._realtime_data_slot)      # 실시간 데이터 슬롯
+        self.OnReceiveMsg.connect(self._server_msg_slot)
+        self.OnReceiveChejanData.connect(self._chejan_data_slot)

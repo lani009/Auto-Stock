@@ -1,8 +1,9 @@
 from abc import abstractmethod, ABCMeta
+from request.dao import Dao
+from request.enum.stockEnum import OfferStock
 from algorithms.condition import Condition
 from algorithms.signal.signal import Signal
 from entity.stock import Stock
-from request.enum.stockEnum import OfferStock
 
 
 class Algorithm(metaclass=ABCMeta):
@@ -25,7 +26,7 @@ class Algorithm(metaclass=ABCMeta):
         self.__stock = stock
         self.__buying_condition = buying_condition()
         self.__selling_condition = selling_condition()
-        self.__signal = Signal()
+        self.__signal = Signal(__refresh_time, stock)
 
         self.__reg_condition(self.__buying_condition, OfferStock.BUYING)
         self.__reg_condition(self.__selling_condition, OfferStock.SELLING)
@@ -53,6 +54,7 @@ class Algorithm(metaclass=ABCMeta):
         '''
         보유 주식 강제매도
         '''
+        Dao().sell_stock(self.__stock)
 
     @abstractmethod
     def moderate_selling(self):
@@ -69,7 +71,7 @@ class Algorithm(metaclass=ABCMeta):
         self._get_signal().start()
 
     def stop_algorithm_thread(self):
-        pass
+        self._get_signal().exit()   # 스레드 종료
 
     def _get_signal(self) -> Signal:
         return self.__signal

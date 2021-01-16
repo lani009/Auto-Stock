@@ -1,9 +1,9 @@
 from typing import Any, Dict, List, Tuple
 from request.enum.stockEnum import RealTimeDataEnum
-from PyQt5.QtCore import QThread
-from algorithms.condition import Condition
 from request.dao import Dao
 from request.enum.stockEnum import OfferStock
+from PyQt5.QtCore import QThread, QWaitCondition
+from algorithms.condition import Condition
 from entity.stock import Stock
 
 class Signal(QThread):
@@ -13,21 +13,25 @@ class Signal(QThread):
     __refresh_time: int = None  # 조건 새로고침 주기 단위(초)
     __condition_list: List[Tuple[Condition, OfferStock]]   # condition 목록
     __realtime_data_temp = None
-    stock: Stock = None     # 할당 받은 주식 종목
+    __stock: Stock = None     # 할당 받은 주식 종목
 
-    def __init__(self):
-        pass
+    def __init__(self, refresh_time, stock):
+        self.__refresh_time = refresh_time
+        self.__stock = stock
 
     def run(self):
-        pass
+        while True:
+            if self.__realtime_data_temp is not None:
+                self.run_condition_trade(0, self.__realtime_data_temp)
+                self.run_condition_trade(1, self.__realtime_data_temp)
+            QWaitCondition.wait(self.__refresh_time)
 
     def attach_condition(self, condition: Condition, offer: OfferStock) -> None:
         '''
         시그널 이벤트 등록
         '''
-
         # Dao에서 실시간 데이터를 받아올 수 있도록 함.
-        Dao().reg_realtime_data(self.realtime_data_slot, self.stock, condition.realtime_data_requirement())    # 실시간 슬롯에 등록
+        Dao().reg_realtime_data(self.realtime_data_slot, self.__stock, condition.realtime_data_requirement())    # 실시간 슬롯에 등록
         self.__condition_list.append([condition, offer])
 
     def detach_condition(self):

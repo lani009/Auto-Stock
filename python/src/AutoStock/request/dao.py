@@ -1,12 +1,14 @@
-from typing import Callable, Dict, List, Tuple, Union
-from datetime import datetime
 import concurrent.futures
-import time
 import queue
-from request.enum.stockEnum import RealTimeDataEnum, CandleUnit, TrCode
-from request.kiwoom import Kiwoom
-from pandas import DataFrame
+import time
+from datetime import datetime
+from typing import Callable, Dict, List, Tuple, Union
+
 from entity.stock import Stock
+from pandas import DataFrame
+
+from request.enum.stockEnum import CandleUnit, RealTimeDataEnum, TrCode
+from request.kiwoom import Kiwoom
 
 
 class Dao():
@@ -19,6 +21,8 @@ class Dao():
     __kiwoom_obj: Kiwoom
     __realtime_data_list: List[Tuple[Callable, List[RealTimeDataEnum], Stock]]     # 현재 reg 되어 있는 realtime data 들의 목록
     __thread_executor = concurrent.futures.ThreadPoolExecutor(max_workers=30)   # 실시간 데이터 Condition 검증 처리용 스레드풀
+    __server_msg_callback: Callable = None
+    __chejan_data_callback: Callable = None
 
     def __new__(cls, *_, **__):
         if not hasattr(cls, "_instance"):
@@ -31,7 +35,7 @@ class Dao():
             self.__kiwoom_obj = Kiwoom()
             self.__realtime_data_list = []
             self.__kiwoom_obj.set_realtime_callback(self._realtime_data_processor)
-            # TODO 로그인 작성
+            self.__kiwoom_obj.set_server_msg_callback(self._server_msg_callback_processor)
             cls._init = True
 
     def login(self):
@@ -250,18 +254,6 @@ class Dao():
     def sell_stock(self):
         pass
 
-    def sell_all_stock(self):
-        pass
-
-    def get_today_date(self) -> str:
-        '''
-        당일의 날짜를 yyyymmdd로 반환한다.
-
-        일봉 조회에서 사용됨.
-        '''
-        date_today = datetime.today()
-        return date_today.strftime('%Y%m%d')
-
     def request_user_ma(self, data: DataFrame, number1: int, ma1: int, number2: int, ma2: int) -> DataFrame:
         '''
         사용자 지정
@@ -284,6 +276,18 @@ class Dao():
 
         return data
 
+    def set_server_msg_callback(self, callback: Callable):
+        self.__server_msg_callback = callback
+
+    def set_chejan_data_callback(self, callback: Callable):
+        self.__chejan_data_callback = callback
+
+    def _server_msg_callback_processor(self, data):
+        self.__server_msg_callback(data)
+
+    def _chejan_data_callback_processor(self, data):
+        self.__chejan_data_callback(data)
+
     def _realtime_data_processor(self, sCode: str, _sRealType, _sRealData):
         stock = self.request_stock_instance(sCode)
         for realtime_list in self.__realtime_data_list:
@@ -291,3 +295,11 @@ class Dao():
                 realtime_data = self.__kiwoom_obj.parse_realtime(sCode, realtime_list[1])
                 self.__thread_executor.submit(realtime_list[0], realtime_data)     # 스레드 풀을 통해 콜백 함수 호출
                 break
+
+    def get_today_date() -> str:
+        '''
+        당일의 날짜를 yyyymmdd로 반환한다.
+
+        일봉 조회에서 사용됨.
+        '''
+        return datetime.today().strftime('%Y%m%d')
