@@ -93,7 +93,7 @@ class Dao():
         elif unit == CandleUnit.MINUTE:
             data = self.__kiwoom_obj.get_tr_data({
                 "종목코드": stock.get_code_name(),
-                "틱범위:": tick,
+                "틱범위": tick,
                 "수정주가구분": 0
             }, TrCode.OPT10080, 0, 2000, [], ["체결시간", "시가", "현재가", "저가", "고가", "거래량"])
 
@@ -115,6 +115,7 @@ class Dao():
         low_list = [abs(int(m_data["저가"])) for m_data in data["multi_data"]]      # 저가
         high_list = [abs(int(m_data["고가"])) for m_data in data["multi_data"]]     # 고가
         volume_list = [int(m_data["거래량"]) for m_data in data["multi_data"]]      # 거래량
+        
 
         date_time_list = []  # datetime 객체 저장용 -> str to datetime
 
@@ -129,6 +130,7 @@ class Dao():
 
         dict_data = {"time": date_time_list, "open": open_list, "close": close_list, "low": low_list, "high": high_list, "volume": volume_list}
         prc_data = DataFrame(dict_data)
+        prc_data['percentage'] = ((prc_data.close - prc_data.open) / prc_data.open * 100)
 
         prc_data.insert(len(prc_data.columns), "ma5", prc_data.close.rolling(5).mean())
         prc_data.insert(len(prc_data.columns), "ma10", prc_data.close.rolling(10).mean())
