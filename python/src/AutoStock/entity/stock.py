@@ -19,7 +19,7 @@ class Stock():
         self.__stock_name_by_code = code_name
 
     def __eq__(self, obj):
-        return self.__stock_name_by_code == obj.__stock_name_by_code
+        return self.__stock_name_by_code() == obj.__stock_name_by_code()
 
     def get_str_name(self) -> str:
         '''
@@ -40,11 +40,11 @@ class Stock():
         return self.__pbr
 
     def set_per(self, per: float):
-        if type(per) is not float:
+        if not isinstance(per, float):
             raise TypeError("parameter per is not float")
         self.__per = per
 
     def set_pbr(self, pbr: float):
-        if type(pbr) is not float:
+        if not isinstance(pbr, float):
             raise TypeError("parameter pbr is not float")
         self.__pbr = pbr

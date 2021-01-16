@@ -1,11 +1,14 @@
-import time
-from typing import Callable, Dict, List, Tuple, Union
+import concurrent.futures
 import queue
+import time
 from datetime import datetime
-from request.enum.stockEnum import RealTimeDataEnum, CandleUnit, TrCode
-from request.kiwoom import Kiwoom
-from pandas import DataFrame
+from typing import Callable, Dict, List, Tuple, Union
+
 from entity.stock import Stock
+from pandas import DataFrame
+
+from request.enum.stockEnum import CandleUnit, RealTimeDataEnum, TrCode
+from request.kiwoom import Kiwoom
 
 
 class Dao():
@@ -16,7 +19,10 @@ class Dao():
     '''
     __request_queue = queue.Queue(maxsize=1)    # size를 1로 막아두어, 하나 이상의 요청이 들어올 경우 해당 스레드는 blocking 되게함
     __kiwoom_obj: Kiwoom
-    __realtime_data_list: List[Union[RealTimeDataEnum, Stock]]     # 현재 reg 되어 있는 realtime data 들의 목록
+    __realtime_data_list: List[Tuple[Callable, List[RealTimeDataEnum], Stock]]     # 현재 reg 되어 있는 realtime data 들의 목록
+    __thread_executor = concurrent.futures.ThreadPoolExecutor(max_workers=30)   # 실시간 데이터 Condition 검증 처리용 스레드풀
+    __server_msg_callback: Callable = None
+    __chejan_data_callback: Callable = None
 
     def __new__(cls, *_, **__):
         if not hasattr(cls, "_instance"):
@@ -29,7 +35,7 @@ class Dao():
             self.__kiwoom_obj = Kiwoom()
             self.__realtime_data_list = []
             self.__kiwoom_obj.set_realtime_callback(self._realtime_data_processor)
-            # TODO 로그인 작성
+            self.__kiwoom_obj.set_server_msg_callback(self._server_msg_callback_processor)
             cls._init = True
 
     def login(self):
@@ -68,7 +74,27 @@ class Dao():
         self.__request_queue.get()
         return data
 
-    def request_candle_data(self, stock: Stock, unit: CandleUnit, tick: int) -> DataFrame:
+    def request_candle_data(self, stock, unit, tick: int) -> DataFrame:
+        '''캔들 데이터 불러오는 메소드
+
+        Parameters
+        ----------
+        stock :
+            검색 대상 주식 인스턴스
+
+        unit :
+            봉 단위
+
+        tick :
+            틱 단위
+
+        Returns
+        -------
+        DataFrame
+            캔들 데이터
+        '''
+
+    def request_candle_data_from_now(self, stock: Stock, unit: CandleUnit, tick: int) -> DataFrame:
         '''
         키움 서버에 봉 차트 데이터를 요청한다.
 
@@ -86,14 +112,14 @@ class Dao():
 
             data = self.__kiwoom_obj.get_tr_data({
                 "종목코드": stock.get_code_name(),
-                "기준일자:": today_date,
+                "기준일자": today_date,
                 "수정주가구분": 0
             }, TrCode.OPT10081, 0, 2000, [], ["일자", "시가", "현재가", "저가", "고가", "거래량"])
 
         elif unit == CandleUnit.MINUTE:
             data = self.__kiwoom_obj.get_tr_data({
                 "종목코드": stock.get_code_name(),
-                "틱범위:": tick,
+                "틱범위": tick,
                 "수정주가구분": 0
             }, TrCode.OPT10080, 0, 2000, [], ["체결시간", "시가", "현재가", "저가", "고가", "거래량"])
 
@@ -140,9 +166,17 @@ class Dao():
     def reg_realtime_data(self, callback: Callable, stock: Stock, realtimeDataList: List[RealTimeDataEnum]):
         '''
         해당 주식의 실시간 데이터 처리 콜백을 등록한다.
+
+        Parameter
+        ---------
+        callback: realtime 이벤트가 발생했을 때, 호출될 콜백
+
+        stock: 대상 주식
+
+        realtimeDataList: 필요로 하는 실시간 데이터 목록
         '''
         self.__request_queue.put(0)
-        self.__realtime_data_list.append([callback, realtimeDataList, stock.get_code_name()])     # 실시간 데이터 처리 목록에 추가
+        self.__realtime_data_list.append((callback, realtimeDataList, stock))     # 실시간 데이터 처리 목록에 추가
         self.__kiwoom_obj.set_realtime_reg(2000, [stock.get_code_name()], realtimeDataList)
         self.__request_queue.get()
 
@@ -160,7 +194,7 @@ class Dao():
         '''
         return self.__kiwoom_obj.get_condition_list()
 
-    def request_stock_instance(self, stock_code: str):
+    def request_stock_instance(self, stock_code: str) -> Stock:
         '''
         종목 코드에 해당하는 Stock 객체를 반환한다.
 
@@ -172,19 +206,21 @@ class Dao():
                                                 0, 3000, ["종목명", "PER", "PBR"], [])
         stock_obj = Stock(tr_data["single_data"]["종목명"], stock_code)
 
-        if tr_data["single_data"]["PER"] == "":
+        if not tr_data["single_data"]["PER"]:
+            # PER이 없을 경우
             stock_obj.set_per(0.0)
         else:
             stock_obj.set_per(float(tr_data["single_data"]["PER"]))
 
-        if tr_data["single_data"]["PBR"] == "":
+        if not tr_data["single_data"]["PBR"]:
+            # PBR이 없을 경우
             stock_obj.set_pbr(0.0)
         else:
             stock_obj.set_pbr(float(tr_data["single_data"]["PBR"]))
 
         return stock_obj
 
-    def request_condition_stock(self, index: str, cond_name: str) -> List[Stock]:
+    def request_condition_stock(self, index: Union[int, str], cond_name: str) -> List[Stock]:
         '''
         1초에 5개 정도의 주식만 불러올 수 있으니 주의!!!!!
         =================
@@ -218,18 +254,6 @@ class Dao():
     def sell_stock(self):
         pass
 
-    def sell_all_stock(self):
-        pass
-
-    def get_today_date(self) -> str:
-        '''
-        당일의 날짜를 yyyymmdd로 반환한다.
-
-        일봉 조회에서 사용됨.
-        '''
-        date_today = datetime.today()
-        return date_today.strftime('%Y%m%d')
-
     def request_user_ma(self, data: DataFrame, number1: int, ma1: int, number2: int, ma2: int) -> DataFrame:
         '''
         사용자 지정
@@ -252,10 +276,30 @@ class Dao():
 
         return data
 
-    def _realtime_data_processor(self, sCode: str, sRealType, sRealData):
-        _ = (sRealData, sRealType)  # warning avoid
+    def set_server_msg_callback(self, callback: Callable):
+        self.__server_msg_callback = callback
+
+    def set_chejan_data_callback(self, callback: Callable):
+        self.__chejan_data_callback = callback
+
+    def _server_msg_callback_processor(self, data):
+        self.__server_msg_callback(data)
+
+    def _chejan_data_callback_processor(self, data):
+        self.__chejan_data_callback(data)
+
+    def _realtime_data_processor(self, sCode: str, _sRealType, _sRealData):
         stock = self.request_stock_instance(sCode)
         for realtime_list in self.__realtime_data_list:
             if realtime_list[2] == stock:
-                realtime_list[0]()  # 콜백 함수 호출
+                realtime_data = self.__kiwoom_obj.parse_realtime(sCode, realtime_list[1])
+                self.__thread_executor.submit(realtime_list[0], realtime_data)     # 스레드 풀을 통해 콜백 함수 호출
                 break
+
+    def get_today_date() -> str:
+        '''
+        당일의 날짜를 yyyymmdd로 반환한다.
+
+        일봉 조회에서 사용됨.
+        '''
+        return datetime.today().strftime('%Y%m%d')

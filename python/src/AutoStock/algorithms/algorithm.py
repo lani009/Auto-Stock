@@ -1,8 +1,9 @@
 from abc import abstractmethod, ABCMeta
-from algorithms.condition import Condition
-from entity.stock import Stock
-from algorithms.signal.signal import Signal
+from request.dao import Dao
 from request.enum.stockEnum import OfferStock
+from algorithms.condition import Condition
+from algorithms.signal.signal import Signal
+from entity.stock import Stock
 
 
 class Algorithm(metaclass=ABCMeta):
@@ -25,10 +26,10 @@ class Algorithm(metaclass=ABCMeta):
         self.__stock = stock
         self.__buying_condition = buying_condition()
         self.__selling_condition = selling_condition()
-        self.__signal = Signal()
+        self.__signal = Signal(__refresh_time, stock)
 
-        self.reg_condition(self.__buying_condition, OfferStock.BUYING)
-        self.reg_condition(self.__selling_condition, OfferStock.SELLING)
+        self.__reg_condition(self.__buying_condition, OfferStock.BUYING)
+        self.__reg_condition(self.__selling_condition, OfferStock.SELLING)
 
     def get_stock(self) -> Stock:
         return self.__stock
@@ -53,15 +54,15 @@ class Algorithm(metaclass=ABCMeta):
         '''
         보유 주식 강제매도
         '''
-        pass
+        Dao().sell_stock(self.__stock)
 
+    @abstractmethod
     def moderate_selling(self):
         '''
         상황 봐가면서 매도하는 메소드
 
         되도록이면 매도하되, 이건 좀 아니다 싶으면 홀딩한다.
         '''
-        pass
 
     def start_algorithm_thread(self):
         '''
@@ -70,12 +71,12 @@ class Algorithm(metaclass=ABCMeta):
         self._get_signal().start()
 
     def stop_algorithm_thread(self):
-        pass
+        self._get_signal().exit()   # 스레드 종료
 
     def _get_signal(self) -> Signal:
         return self.__signal
 
-    def __reg_condition(self, condition: Condition, callback, offer):
+    def __reg_condition(self, condition: Condition, offer):
         '''
         Condition 등록 위임 메소드
         '''

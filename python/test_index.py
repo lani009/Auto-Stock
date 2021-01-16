@@ -1,10 +1,9 @@
 import sys
+sys.path.append("D:/git/Auto-Stock/python")
 from request.dao import Dao
-import sys
 from PyQt5.QtWidgets import QApplication
 import unittest
 
-sys.path.append("D:/git/Auto-Stock/python")
 
 
 class AutoStockTest(unittest.TestCase):
@@ -12,12 +11,12 @@ class AutoStockTest(unittest.TestCase):
 
 
 class MainTest():
-    def __init__():
+    def __init__(self):
         pass
 
-    def main():
+    def main(self):
         Dao().login()
-        data = Dao().request_candle_data()
+        data = Dao().request_candle_data_from_now()
         data.plot()
 
 
