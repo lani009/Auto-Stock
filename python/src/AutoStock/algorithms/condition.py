@@ -1,4 +1,6 @@
 from abc import ABCMeta, abstractmethod
+from typing import List
+from request.enum.stockEnum import RealTimeDataEnum
 
 
 class Condition(metaclass=ABCMeta):
@@ -16,7 +18,7 @@ class Condition(metaclass=ABCMeta):
         raise NotImplementedError
 
     @abstractmethod
-    def realtime_data_requirement(self):
+    def realtime_data_requirement(self) -> List[RealTimeDataEnum]:
         '''
         REALTIME 데이터 중 필요로하는 데이터에 대한 정의
         '''
