@@ -1,4 +1,4 @@
-from enum import Enum, auto
+from enum import Enum, auto, unique
 
 
 class OfferStock(Enum):
@@ -14,14 +14,15 @@ class CandleUnit(Enum):
     DAY = auto()
 
 
+@unique
 class RealTimeDataEnum(Enum):
-    CURRENT_PRICE = 10
-    VOLUME = 15
-    START_PRICE = 16
-    HIGH_PRICE = 17
-    LOW_PRICE = 18
-    ACCUMULATED_VOLUME = 13
-    MARKET_CAP = 311
+    CURRENT_PRICE = 10  # 현재가
+    VOLUME = 15  # 거래량
+    OPEN_PRICE = 16  # 시가
+    HIGH_PRICE = 17  # 고가
+    LOW_PRICE = 18  # 저가
+    ACCUMULATED_VOLUME = 13 # 누적 거래량
+    MARKET_CAP = 311    # 시가총액
 
 
 class TrCode(Enum):
