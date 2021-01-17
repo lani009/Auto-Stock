@@ -1,10 +1,10 @@
 from typing import Any, Dict, List, Tuple
-from request.enum.stockEnum import RealTimeDataEnum
-from request.dao import Dao
-from request.enum.stockEnum import OfferStock
+from AutoStock.request.enum.stockEnum import RealTimeDataEnum
+from AutoStock.request.dao import Dao
+from AutoStock.request.enum.stockEnum import OfferStock
 from PyQt5.QtCore import QThread, QWaitCondition
-from algorithms.condition import Condition
-from entity.stock import Stock
+from AutoStock.algorithms.condition import Condition
+from AutoStock.entity.stock import Stock
 
 class Signal(QThread):
     '''

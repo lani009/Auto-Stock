@@ -1,8 +1,8 @@
 from abc import ABCMeta, abstractmethod
 from typing import List
 
-from entity.stock import Stock
-from request.enum.stockEnum import RealTimeDataEnum
+from AutoStock.entity.stock import Stock
+from AutoStock.request.enum.stockEnum import RealTimeDataEnum
 
 
 class Condition(metaclass=ABCMeta):

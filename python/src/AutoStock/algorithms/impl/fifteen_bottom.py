@@ -1,10 +1,11 @@
 from typing import Any, Dict, List
+from copy import deepcopy
 
-from algorithms.algorithm import Algorithm
-from algorithms.condition import Condition
-from entity.stock import Stock
-from request.dao import Dao
-from request.enum.stockEnum import CandleUnit, RealTimeDataEnum
+from AutoStock.algorithms.algorithm import Algorithm
+from AutoStock.algorithms.condition import Condition
+from AutoStock.entity.stock import Stock
+from AutoStock.request.dao import Dao
+from AutoStock.request.enum.stockEnum import CandleUnit, RealTimeDataEnum
 
 
 class FifteenBottom(Algorithm):
@@ -28,12 +29,11 @@ class FifteenBottom(Algorithm):
             if condition[1] == "fifteen_bottom":
                 stock_list: List[Stock] = Dao().request_condition_stock(condition[0], condition[1])
         for stock in stock_list:
-            find_stock = Dao().request_stock_instance(stock)
-            data = Dao().request_candle_data_from_now(find_stock, CandleUnit.MINUTE, 30)  #한번만 검색하면됨.
+            data = Dao().request_candle_data_from_now(stock, CandleUnit.MINUTE, 30)  #한번만 검색하면됨.
             if data.loc[0].percentage >= 3:
                 ready_stock.append(stock)
                 Dao().set_buying_price(stock, data.loc[0].open)
-        return ready_stock
+        return deepcopy(ready_stock)
 
     def moderate_selling(self):
         return super().moderate_selling()

@@ -1,6 +1,6 @@
 from typing import Any, Callable, Dict, List, Tuple
-from request.enum.stockEnum import RealTimeDataEnum, TrCode, TrClassification
-from request.enum.errCode import ErrCode
+from AutoStock.request.enum.stockEnum import RealTimeDataEnum, TrCode, TrClassification
+from AutoStock.request.enum.errCode import ErrCode
 from PyQt5.QAxContainer import QAxWidget
 from PyQt5.QtCore import QEventLoop
 
@@ -85,7 +85,7 @@ class Kiwoom(QAxWidget):
         (index, name)의 리스트를 반환한다.
         '''
         r_value = self.dynamicCall("GetConditionLoad()")
-        print(ErrCode(r_value))     # dynamic call 반환 값 출력
+        # print(ErrCode(r_value))     # dynamic call 반환 값 출력
         self.__global_eventloop.exec_()
         return self.__condition_name_list
 
@@ -247,6 +247,7 @@ class Kiwoom(QAxWidget):
         '''
         GetConditionLoad 처리용 슬롯
         '''
+        print(_sMsg)
         self.__condition_name_list = []  # 이전에 저장되어 있던 조건식 들을 삭제한다.
         condition_name_list = self.dynamicCall("GetConditionNameList()")
 

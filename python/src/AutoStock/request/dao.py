@@ -4,12 +4,12 @@ import time
 from datetime import datetime
 from typing import Callable, Dict, List, Tuple, Union
 
-from entity.stock import Stock
+from AutoStock.entity.stock import Stock
 from pandas import DataFrame
 
-from request.enum.stockEnum import (CandleUnit, OrderType, RealTimeDataEnum,
+from AutoStock.request.enum.stockEnum import (CandleUnit, OrderType, RealTimeDataEnum,
                                     TrClassification, TrCode)
-from request.kiwoom import Kiwoom
+from AutoStock.request.kiwoom import Kiwoom
 
 
 class Dao():

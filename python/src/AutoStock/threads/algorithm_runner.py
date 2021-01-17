@@ -1,7 +1,7 @@
 import copy
 from typing import List
-from entity.stock import Stock
-from algorithms.algorithm import Algorithm
+from AutoStock.entity.stock import Stock
+from AutoStock.algorithms.algorithm import Algorithm
 
 
 class AlgoritmRunner():
