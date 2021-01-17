@@ -1,29 +1,31 @@
-from PyQt5.QtCore import QThread
+from AutoStock.request.dao import Dao
+from AutoStock.algorithms.impl.fifteen_bottom import FifteenBottom
+from AutoStock.threads.algorithm_runner import AlgoritmRunner
+from PyQt5.QtWidgets import QApplication
+import sys
 
-from threads.algorithm_runner import AlgoritmRunner
-from algorithms.impl.fifteen_pivot2 import Fifteen_Pivot2
 
-import time
-
-
-class Index(QThread):
-    '''
-    주식 총괄 메인 클래스
-    '''
-    pass
-
+class MainRunner():
+    __algorithm_runner: AlgoritmRunner = None
+    __NINEOCLOCK = None
     def __init__(self):
-        self.algorithm_runner = AlgoritmRunner()
+        self.__algorithm_runner = AlgoritmRunner()
+        Dao().set_chejan_data_callback(self.echo)
+        Dao().set_server_msg_callback(self.echo)
 
-    def run(self):
-        '''
-        메인
-        '''
-        current_time = time.time()
+    def run_program(self):
+        filtered_stock_list = FifteenBottom.filter_list()
+        for stock in filtered_stock_list:
+            self.__algorithm_runner.register_algorithm(FifteenBottom, stock)
 
-        if current_time > "9시 25분":
-            selected_stock = Fifteen_Pivot2.filter_list()
+        return
 
-            for stock in selected_stock:
-                # 알고리즘이 돌아가도록 등록
-                self.algorithm_runner.register_algorithm(Fifteen_Pivot2, stock)
+    def echo(self, arg):
+        print(arg)
+
+
+if __name__ == "__main__":
+    app = QApplication([])
+    main_runner = MainRunner()
+    main_runner.run_program()
+    sys.exit(app.exec_())

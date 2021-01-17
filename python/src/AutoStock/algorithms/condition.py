@@ -1,6 +1,7 @@
 from abc import ABCMeta, abstractmethod
-from python.src.AutoStock.entity.stock import Stock
 from typing import List
+
+from entity.stock import Stock
 from request.enum.stockEnum import RealTimeDataEnum
 
 

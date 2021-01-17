@@ -190,6 +190,12 @@ class Kiwoom(QAxWidget):
 
         return realtime_data
 
+    def get_account_info(self):
+        account_list = self.dynamicCall("GetLoginInfo(QString)", "ACCNO")
+        account_num = account_list.split(';')[0]
+        return account_num
+
+
     def _set_input_values(self, input_value: Dict[str, str]):
         '''
         SetInputVlaue() 동적 호출 iteration 용도
@@ -277,17 +283,5 @@ class Kiwoom(QAxWidget):
         self.OnReceiveConditionVer.connect(self._condition_ver_slot)  # 조건식 데이터 슬롯
         self.OnReceiveTrCondition.connect(self._send_condition_slot)  # 조건식 종목 슬롯
         self.OnReceiveRealData.connect(self._realtime_data_slot)      # 실시간 데이터 슬롯
-<<<<<<< HEAD
         self.OnReceiveMsg.connect(self._server_msg_slot)
         self.OnReceiveChejanData.connect(self._chejan_data_slot)
-=======
-
-    def get_account_info(self):
-        account_list = self.dynamicCall("GetLoginInfo(QString)", "ACCNO")
-        account_num = account_list.split(';')[0]
-
-        self.account_num = account_num
-
-        print("계좌번호 : %s" % account_num)
-        return account_num
->>>>>>> 22bf83a89bbd7adb465abcf6b54d96cdcf5278a7
