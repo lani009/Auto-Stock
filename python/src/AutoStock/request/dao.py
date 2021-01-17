@@ -21,9 +21,9 @@ class Dao():
     __kiwoom_obj: Kiwoom
     __realtime_data_list: List[Tuple[Callable, List[RealTimeDataEnum], Stock]]     # 현재 reg 되어 있는 realtime data 들의 목록
     __thread_executor = concurrent.futures.ThreadPoolExecutor(max_workers=30)   # 실시간 데이터 Condition 검증 처리용 스레드풀
-    stock_type_dict = {}
-    buying_price_dict = {}
-    buying_stock = Stock
+    __stock_type_dict = {}
+    __buying_price_dict = {}
+    __buying_stock: Stock
 
     def __new__(cls, *_, **__):
         if not hasattr(cls, "_instance"):
