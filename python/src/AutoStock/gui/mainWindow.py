@@ -41,7 +41,7 @@ class MainWindow(QMainWindow):
         '''
         구매한 종목 show
         '''
-        stock = Dao().load_stock
+        stock = Dao().load_stock()
         
         self.stockNameLabel.setText(stock.get_str_name)
     
@@ -56,18 +56,14 @@ class MainWindow(QMainWindow):
         elif stock == Null:
             self.priceLabel.setText(" ")
 
-    @pyqtSlot()
-    def show_profit(self):
-        profit=
+    # @pyqtSlot()
+    # def show_profit(self):
+    #     profit=
         
-        self.priceLabel.setText(profit)
+    #     self.priceLabel.setText(profit)
 
     @pyqtSlot
     def show_candle_chart(self):
-
-
-
-
 
 
 
