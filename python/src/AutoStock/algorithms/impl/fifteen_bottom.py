@@ -66,7 +66,7 @@ class fifteen_bottom(Algorithm):
             current_price = realtime_data[rtde.CURRENT_PRICE]
             buying_price = Dao().request_buying_price(stock.get_code_name)
             data = Dao().request_candle_data_from_now(stock.get_code_name, CandleUnit.MINUTE, 30)
-            if 수익률 0.5 :
+            if (((current_price - buying_price) - 1) * 100) > 0.8:
                 Dao().delete_stock()
                 return True          
             elif data.loc[0].close < buying_price:
