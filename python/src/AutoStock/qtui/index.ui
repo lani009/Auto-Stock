@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>804</width>
-    <height>609</height>
+    <width>800</width>
+    <height>600</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -369,10 +369,27 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>stockNameLabel</sender>
+   <signal>linkActivated(QString)</signal>
+   <receiver>stopButton</receiver>
+   <slot>click()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>139</x>
+     <y>561</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>726</x>
+     <y>468</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>stopBtn_clicked()</slot>
   <slot>slot2()</slot>
   <slot>sellingBtn_clicked()</slot>
+  <slot>show_bought_stock()</slot>
  </slots>
 </ui>

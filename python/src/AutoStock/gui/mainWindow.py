@@ -1,9 +1,9 @@
-from PyQt5.QtCore import pyqtSlot
+from PyQt5.QtCore import Null, pyqtSlot
 from PyQt5.QtWidgets import QApplication, QMainWindow
 import sys
 from PyQt5 import uic
-
-
+from request.dao import Dao
+from entity.stock import Stock
 
 
 class MainWindow(QMainWindow):
@@ -14,7 +14,7 @@ class MainWindow(QMainWindow):
 
 
     def setupUI(self):
-        self.form_class = uic.loadUi("./python/src/AutoStock/qtui/index.ui", self)
+        self.program = uic.loadUi("./python/src/AutoStock/qtui/index.ui", self)
         
         self.setWindowTitle("tenok")
         self.show()
@@ -34,9 +34,36 @@ class MainWindow(QMainWindow):
         버튼 클릭시 프로그램 중지
         '''
         print("중지")
+        
     
+    @pyqtSlot()
+    def show_bought_stock(self):
+        '''
+        구매한 종목 show
+        '''
+        stock = Dao().load_stock
+        
+        self.stockNameLabel.setText(stock.get_str_name)
+    
+    @pyqtSlot()
+    def show_now_price(self):
+        stock = Dao().load_stock()
+        if stock != Null:
 
+            price =
 
+            self.priceLabel.setText(price)
+        elif stock == Null:
+            self.priceLabel.setText(" ")
+
+    @pyqtSlot()
+    def show_profit(self):
+        profit=
+        
+        self.priceLabel.setText(profit)
+
+    @pyqtSlot
+    def show_candle_chart(self):
 
 
 

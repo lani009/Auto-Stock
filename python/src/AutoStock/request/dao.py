@@ -3,6 +3,8 @@ from datetime import datetime
 import concurrent.futures
 import time
 import queue
+
+from PyQt5.QtCore import Null
 from request.enum.stockEnum import RealTimeDataEnum, CandleUnit, TrCode
 from request.kiwoom import Kiwoom
 from pandas import DataFrame
@@ -19,6 +21,9 @@ class Dao():
     __kiwoom_obj: Kiwoom
     __realtime_data_list: List[Tuple[Callable, List[RealTimeDataEnum], Stock]]     # 현재 reg 되어 있는 realtime data 들의 목록
     __thread_executor = concurrent.futures.ThreadPoolExecutor(max_workers=30)   # 실시간 데이터 Condition 검증 처리용 스레드풀
+    stock_type_dict = {}
+    buying_price_dict = {}
+    buying_stock = Stock
 
     def __new__(cls, *_, **__):
         if not hasattr(cls, "_instance"):
@@ -66,7 +71,7 @@ class Dao():
         SetInputValue("거래량구분", "입력값 3");
         '''
         self.__request_queue.put(0)
-        data = self.__kiwoom_obj.get_tr_data(input_value, trEnum, nPrevNext, sScreenNo, rqSingleData ,rqMultiData)
+        data = self.__kiwoom_obj.get_tr_data(input_value, trEnum, nPrevNext, sScreenNo, rqSingleData, rqMultiData)
         self.__request_queue.get()
         return data
 
@@ -108,7 +113,7 @@ class Dao():
 
             data = self.__kiwoom_obj.get_tr_data({
                 "종목코드": stock.get_code_name(),
-                "기준일자": today_date,
+                "기준일자": tick,
                 "수정주가구분": 0
             }, TrCode.OPT10081, 0, 2000, [], ["일자", "시가", "현재가", "저가", "고가", "거래량"])
 
@@ -293,3 +298,54 @@ class Dao():
                 realtime_data = self.__kiwoom_obj.parse_realtime(sCode, realtime_list[1])
                 self.__thread_executor.submit(realtime_list[0], realtime_data)     # 스레드 풀을 통해 콜백 함수 호출
                 break
+
+
+
+    def set_stock_type(self, stock_code, type: int):
+        '''
+        주식을 분할 매수 할지 정하기 위해 type을 저장시킴
+
+        9시~9시30분 봉이 3프로??? 이하면 타입 1 -> 분할매수 x
+        
+        "" 3프로??? 이상이면 타입 2 -> 분할 매수
+        '''
+        self.stock_type_dict.setdefault(stock_code, type)
+
+    def request_stock_type(self, stock_code):
+        '''
+        주식의 type을 불러오는 메소드
+        '''
+        stock_type = self.stock_type_dict.get(stock_code)
+        return stock_type
+
+    def set_buying_price(self, stock_code, price: int):
+        '''
+      
+        '''
+        self.buying_price_dict.setdefault(stock_code, price)
+
+    def request_buying_price(self, stock_code):
+        '''
+        주식의 매수가격을 불러오는 메소드
+        '''
+        buying_price = self.buying_price_dict.get(stock_code)
+        return buying_price
+
+    def store_stock(self, stock):
+        '''
+        매수한 주식을 저장하는 메소드
+        '''
+        self.buying_stock = 
+
+
+    def load_stock(self) -> Stock:
+        '''
+        매수한 주식을 불러오는 메소드
+        '''
+        return self.buying_stock
+
+    def delete_stock(self):
+        '''
+        매도후 초기화
+        '''
+        self.buying_stock = Null
