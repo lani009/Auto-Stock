@@ -1,8 +1,10 @@
 from abc import abstractmethod, ABCMeta
-from algorithms.condition import Condition
-from algorithms.signal.signal import Signal
-from entity.stock import Stock
-from request.enum.stockEnum import OfferStock
+from typing import List
+from AutoStock.request.dao import Dao
+from AutoStock.request.enum.stockEnum import OfferStock
+from AutoStock.algorithms.condition import Condition
+from AutoStock.algorithms.signal.signal import Signal
+from AutoStock.entity.stock import Stock
 
 
 class Algorithm(metaclass=ABCMeta):
@@ -25,7 +27,7 @@ class Algorithm(metaclass=ABCMeta):
         self.__stock = stock
         self.__buying_condition = buying_condition()
         self.__selling_condition = selling_condition()
-        self.__signal = Signal()
+        self.__signal = Signal(__refresh_time, stock)
 
         self.__reg_condition(self.__buying_condition, OfferStock.BUYING)
         self.__reg_condition(self.__selling_condition, OfferStock.SELLING)
@@ -33,9 +35,8 @@ class Algorithm(metaclass=ABCMeta):
     def get_stock(self) -> Stock:
         return self.__stock
 
-    @abstractmethod
     @staticmethod
-    def filter_list() -> list:
+    def filter_list() -> List[Stock]:
         '''
         거래 대상 주식 필터링
         '''
@@ -53,6 +54,7 @@ class Algorithm(metaclass=ABCMeta):
         '''
         보유 주식 강제매도
         '''
+        Dao().sell_stock(self.__stock)
 
     @abstractmethod
     def moderate_selling(self):
@@ -69,7 +71,7 @@ class Algorithm(metaclass=ABCMeta):
         self._get_signal().start()
 
     def stop_algorithm_thread(self):
-        pass
+        self._get_signal().exit()   # 스레드 종료
 
     def _get_signal(self) -> Signal:
         return self.__signal

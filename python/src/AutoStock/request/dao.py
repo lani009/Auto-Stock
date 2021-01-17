@@ -1,14 +1,15 @@
-from typing import Callable, Dict, List, Tuple, Union
-from datetime import datetime
 import concurrent.futures
-import time
 import queue
+import time
+from datetime import datetime
+from typing import Callable, Dict, List, Tuple, Union
 
-from PyQt5.QtCore import Null
-from request.enum.stockEnum import RealTimeDataEnum, CandleUnit, TrCode
-from request.kiwoom import Kiwoom
+from AutoStock.entity.stock import Stock
 from pandas import DataFrame
-from entity.stock import Stock
+
+from AutoStock.request.enum.stockEnum import (CandleUnit, OrderType, RealTimeDataEnum,
+                                    TrClassification, TrCode)
+from AutoStock.request.kiwoom import Kiwoom
 
 
 class Dao():
@@ -21,9 +22,12 @@ class Dao():
     __kiwoom_obj: Kiwoom
     __realtime_data_list: List[Tuple[Callable, List[RealTimeDataEnum], Stock]]     # 현재 reg 되어 있는 realtime data 들의 목록
     __thread_executor = concurrent.futures.ThreadPoolExecutor(max_workers=30)   # 실시간 데이터 Condition 검증 처리용 스레드풀
-    __stock_type_dict = {}
-    __buying_price_dict = {}
-    __buying_stock: Stock
+    __server_msg_callback: Callable = None
+    __chejan_data_callback: Callable = None
+    __buying_price_dict: Dict[Stock, int] = {}
+    __accno: str = None     # 계좌번호
+    __bought_stock_list: List[Tuple[Stock, int, int]] = None    # 매수한 주식 목록. [주식, 가격, 주수]
+    # __buying_stock: Stock = None
 
     def __new__(cls, *_, **__):
         if not hasattr(cls, "_instance"):
@@ -36,7 +40,7 @@ class Dao():
             self.__kiwoom_obj = Kiwoom()
             self.__realtime_data_list = []
             self.__kiwoom_obj.set_realtime_callback(self._realtime_data_processor)
-            # TODO 로그인 작성
+            self.__kiwoom_obj.set_server_msg_callback(self._server_msg_callback_processor)
             cls._init = True
 
     def login(self):
@@ -94,6 +98,7 @@ class Dao():
         DataFrame
             캔들 데이터
         '''
+        raise NotImplementedError()
 
     def request_candle_data_from_now(self, stock: Stock, unit: CandleUnit, tick: int) -> DataFrame:
         '''
@@ -109,8 +114,6 @@ class Dao():
 
         data = None
         if unit == CandleUnit.DAY:
-            today_date = self.get_today_date()
-
             data = self.__kiwoom_obj.get_tr_data({
                 "종목코드": stock.get_code_name(),
                 "기준일자": tick,
@@ -142,7 +145,6 @@ class Dao():
         low_list = [abs(int(m_data["저가"])) for m_data in data["multi_data"]]      # 저가
         high_list = [abs(int(m_data["고가"])) for m_data in data["multi_data"]]     # 고가
         volume_list = [int(m_data["거래량"]) for m_data in data["multi_data"]]      # 거래량
-        
 
         date_time_list = []  # datetime 객체 저장용 -> str to datetime
 
@@ -205,6 +207,7 @@ class Dao():
         ---------
         stock_code: 종목 코드
         '''
+        self.__request_queue.put(0)
         tr_data = self.__kiwoom_obj.get_tr_data({"종목코드": stock_code}, TrCode.OPT10001,
                                                 0, 3000, ["종목명", "PER", "PBR"], [])
         stock_obj = Stock(tr_data["single_data"]["종목명"], stock_code)
@@ -221,6 +224,7 @@ class Dao():
         else:
             stock_obj.set_pbr(float(tr_data["single_data"]["PBR"]))
 
+        self.__request_queue.get()
         return stock_obj
 
     def request_condition_stock(self, index: Union[int, str], cond_name: str) -> List[Stock]:
@@ -241,6 +245,7 @@ class Dao():
         [Stock, Stock, ...]
         Stock 객체를 list로 wrapping하여 반환한다.
         '''
+        self.__request_queue.put(0)
         stock_code_list = self.__kiwoom_obj.get_condition_stock("3000", cond_name, index)   # 종목 코드 리스트
 
         stock_list = []     # Stock 객체 리스트
@@ -249,25 +254,76 @@ class Dao():
             stock_list.append(self.request_stock_instance(stock_code))
             time.sleep(0.168)   # QoS 안걸리는 최적의 숫자!
 
+        self.__request_queue.get()
         return stock_list
 
-    def buy_stock(self):
-        pass
+    def buy_stock(self, stock: Stock, money: int):
+        '''매수
 
-    def sell_stock(self):
-        pass
+        Parameters
+        ----------
+        stock :
+            거래 대상 주식 인스턴스
 
-    def sell_all_stock(self):
-        pass
-
-    def get_today_date(self) -> str:
+        money :
+            금액
         '''
-        당일의 날짜를 yyyymmdd로 반환한다.
+        stock_current_price = self.__kiwoom_obj.get_tr_data({
+            "종목코드": stock.get_code_name()
+        }, TrCode.OPT10001, 0, 2000, ["현재가"], [])["현재가"]
+        stock_n = stock_current_price // money     # 구매 예정 주 수
+        self.__kiwoom_obj.send_order(2000, self.__accno, OrderType.BUY, stock.get_code_name(),
+                                     stock_n, 0, TrClassification.BEST_FOK, 0)
 
-        일봉 조회에서 사용됨.
+        self.__bought_stock_list.append((stock, stock_current_price, stock_n))
+
+    def sell_stock(self, stock: Stock):
+        '''전액 매도
+
+        Parameters
+        ----------
+        stock
         '''
-        date_today = datetime.today()
-        return date_today.strftime('%Y%m%d')
+        stock_found = next((list for list in self.__bought_stock_list if stock == list[0]), None)
+        if stock_found is None:
+            raise RuntimeError("해당 주식을 매수한 적이 없음.")
+
+        self.__kiwoom_obj.send_order(2000, self.__accno, OrderType.SELL, stock.get_code_name(),
+                                     stock_found[2], 0, TrClassification.BEST_FOK, 0)
+
+    def set_buying_price(self, stock, price: int):
+        '''매수 할 가격
+
+        Parameters
+        ----------
+        stock :
+        price :
+        '''
+        self.__buying_price_dict.setdefault(stock, price)
+
+    def request_buying_price(self, stock):
+        '''
+        주식의 매수가격을 불러오는 메소드
+        '''
+        return self.__buying_price_dict.get(stock)
+
+    # def store_stock(self, stock):
+    #     '''
+    #     매수한 주식을 저장하는 메소드
+    #     '''
+    #     self.__buying_stock = stock
+
+    # def load_stock(self) -> Stock:
+    #     '''
+    #     매수한 주식을 불러오는 메소드
+    #     '''
+    #     return self.__buying_stock
+
+    # def delete_stock(self):
+    #     '''
+    #     매도후 초기화
+    #     '''
+    #     self.__buying_stock = None
 
     def request_user_ma(self, data: DataFrame, number1: int, ma1: int, number2: int, ma2: int) -> DataFrame:
         '''
@@ -291,6 +347,27 @@ class Dao():
 
         return data
 
+    
+    def get_today_date(self) -> str:
+        '''
+        당일의 날짜를 yyyymmdd로 반환한다.
+
+        일봉 조회에서 사용됨.
+        '''
+        return datetime.today().strftime('%Y%m%d')
+
+    def set_server_msg_callback(self, callback: Callable):
+        self.__server_msg_callback = callback
+
+    def set_chejan_data_callback(self, callback: Callable):
+        self.__chejan_data_callback = callback
+
+    def _server_msg_callback_processor(self, data):
+        self.__server_msg_callback(data)
+
+    def _chejan_data_callback_processor(self, data):
+        self.__chejan_data_callback(data)
+
     def _realtime_data_processor(self, sCode: str, _sRealType, _sRealData):
         stock = self.request_stock_instance(sCode)
         for realtime_list in self.__realtime_data_list:
@@ -298,54 +375,3 @@ class Dao():
                 realtime_data = self.__kiwoom_obj.parse_realtime(sCode, realtime_list[1])
                 self.__thread_executor.submit(realtime_list[0], realtime_data)     # 스레드 풀을 통해 콜백 함수 호출
                 break
-
-
-
-    def set_stock_type(self, stock_code, type: int):
-        '''
-        주식을 분할 매수 할지 정하기 위해 type을 저장시킴
-
-        9시~9시30분 봉이 3프로??? 이하면 타입 1 -> 분할매수 x
-        
-        "" 3프로??? 이상이면 타입 2 -> 분할 매수
-        '''
-        self.stock_type_dict.setdefault(stock_code, type)
-
-    def request_stock_type(self, stock_code):
-        '''
-        주식의 type을 불러오는 메소드
-        '''
-        stock_type = self.stock_type_dict.get(stock_code)
-        return stock_type
-
-    def set_buying_price(self, stock_code, price: int):
-        '''
-      
-        '''
-        self.buying_price_dict.setdefault(stock_code, price)
-
-    def request_buying_price(self, stock_code):
-        '''
-        주식의 매수가격을 불러오는 메소드
-        '''
-        buying_price = self.buying_price_dict.get(stock_code)
-        return buying_price
-
-    def store_stock(self, stock):
-        '''
-        매수한 주식을 저장하는 메소드
-        '''
-        self.buying_stock = 
-
-
-    def load_stock(self) -> Stock:
-        '''
-        매수한 주식을 불러오는 메소드
-        '''
-        return self.buying_stock
-
-    def delete_stock(self):
-        '''
-        매도후 초기화
-        '''
-        self.buying_stock = Null
