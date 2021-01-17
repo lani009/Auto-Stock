@@ -15,7 +15,7 @@ class FifteenBottom(Algorithm):
 
     __dao: Dao
     def __init__(self, stock: Stock):
-        super().__init__(stock, FifteenBottom.FifteenBottom_BuyingCondition, FifteenBottom.FifteenBottom_SellingCondition, 60)
+        super().__init__(stock, FifteenBottom.FifteenBottom_BuyingCondition, FifteenBottom.FifteenBottom_SellingCondition, 60, 50000)
         self.__dao = Dao()
         # day = Dao().get_today_date()
 
@@ -50,7 +50,6 @@ class FifteenBottom(Algorithm):
             if current_price == buying_price:
                 # Dao().store_stock(stock)
                 return True
-
             return False
 
         def realtime_data_requirement(self):
