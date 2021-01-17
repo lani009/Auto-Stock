@@ -23,6 +23,9 @@ class Dao():
     __thread_executor = concurrent.futures.ThreadPoolExecutor(max_workers=30)   # 실시간 데이터 Condition 검증 처리용 스레드풀
     __server_msg_callback: Callable = None
     __chejan_data_callback: Callable = None
+    __stock_type_dict = {}
+    __buying_price_dict = {}
+    __buying_stock: Stock
 
     def __new__(cls, *_, **__):
         if not hasattr(cls, "_instance"):
@@ -70,7 +73,7 @@ class Dao():
         SetInputValue("거래량구분", "입력값 3");
         '''
         self.__request_queue.put(0)
-        data = self.__kiwoom_obj.get_tr_data(input_value, trEnum, nPrevNext, sScreenNo, rqSingleData ,rqMultiData)
+        data = self.__kiwoom_obj.get_tr_data(input_value, trEnum, nPrevNext, sScreenNo, rqSingleData, rqMultiData)
         self.__request_queue.get()
         return data
 
@@ -112,7 +115,7 @@ class Dao():
 
             data = self.__kiwoom_obj.get_tr_data({
                 "종목코드": stock.get_code_name(),
-                "기준일자": today_date,
+                "기준일자": tick,
                 "수정주가구분": 0
             }, TrCode.OPT10081, 0, 2000, [], ["일자", "시가", "현재가", "저가", "고가", "거래량"])
 
@@ -141,6 +144,7 @@ class Dao():
         low_list = [abs(int(m_data["저가"])) for m_data in data["multi_data"]]      # 저가
         high_list = [abs(int(m_data["고가"])) for m_data in data["multi_data"]]     # 고가
         volume_list = [int(m_data["거래량"]) for m_data in data["multi_data"]]      # 거래량
+        
 
         date_time_list = []  # datetime 객체 저장용 -> str to datetime
 
@@ -155,6 +159,7 @@ class Dao():
 
         dict_data = {"time": date_time_list, "open": open_list, "close": close_list, "low": low_list, "high": high_list, "volume": volume_list}
         prc_data = DataFrame(dict_data)
+        prc_data['percentage'] = ((prc_data.close - prc_data.open) / prc_data.open * 100)
 
         prc_data.insert(len(prc_data.columns), "ma5", prc_data.close.rolling(5).mean())
         prc_data.insert(len(prc_data.columns), "ma10", prc_data.close.rolling(10).mean())
@@ -303,3 +308,53 @@ class Dao():
         일봉 조회에서 사용됨.
         '''
         return datetime.today().strftime('%Y%m%d')
+
+
+    def set_stock_type(self, stock_code, type: int):
+        '''
+        주식을 분할 매수 할지 정하기 위해 type을 저장시킴
+
+        9시~9시30분 봉이 3프로??? 이하면 타입 1 -> 분할매수 x
+        
+        "" 3프로??? 이상이면 타입 2 -> 분할 매수
+        '''
+        self.__stock_type_dict.setdefault(stock_code, type)
+
+    def request_stock_type(self, stock_code):
+        '''
+        주식의 type을 불러오는 메소드
+        '''
+        stock_type = self.__stock_type_dict.get(stock_code)
+        return stock_type
+
+    def set_buying_price(self, stock_code, price: int):
+        '''
+      
+        '''
+        self.__buying_price_dict.setdefault(stock_code, price)
+
+    def request_buying_price(self, stock_code):
+        '''
+        주식의 매수가격을 불러오는 메소드
+        '''
+        buying_price = self.__buying_price_dict.get(stock_code)
+        return buying_price
+
+    def store_stock(self, stock):
+        '''
+        매수한 주식을 저장하는 메소드
+        '''
+        self.__buying_stock = 
+
+
+    def load_stock(self) -> Stock:
+        '''
+        매수한 주식을 불러오는 메소드
+        '''
+        return self.__buying_stock
+
+    def delete_stock(self):
+        '''
+        매도후 초기화
+        '''
+        self.__buying_stock = Null
