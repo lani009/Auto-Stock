@@ -51,3 +51,9 @@ class TrClassification(Enum):
     PRE_REGULAR = "61"  # 장전 시간외
     SINGLE_AUCTION = "62"   # 시간외 단일가
     POST_REGULAR = "81"     # 장후 시간외
+
+class OrderType(Enum):
+    BUY = 1     # 신규 매수
+    SELL = 2    # 신규 매도
+    KILL_BUY = 3    # 매수 취소
+    KILL_SELL = 4   # 매도 취소

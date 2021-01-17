@@ -1,9 +1,10 @@
 from abc import abstractmethod, ABCMeta
-from request.dao import Dao
-from request.enum.stockEnum import OfferStock
-from algorithms.condition import Condition
-from algorithms.signal.signal import Signal
-from entity.stock import Stock
+from typing import List
+from AutoStock.request.dao import Dao
+from AutoStock.request.enum.stockEnum import OfferStock
+from AutoStock.algorithms.condition import Condition
+from AutoStock.algorithms.signal.signal import Signal
+from AutoStock.entity.stock import Stock
 
 
 class Algorithm(metaclass=ABCMeta):
@@ -34,9 +35,8 @@ class Algorithm(metaclass=ABCMeta):
     def get_stock(self) -> Stock:
         return self.__stock
 
-    @abstractmethod
     @staticmethod
-    def filter_list() -> list:
+    def filter_list() -> List[Stock]:
         '''
         거래 대상 주식 필터링
         '''
