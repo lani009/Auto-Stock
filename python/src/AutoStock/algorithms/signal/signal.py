@@ -14,10 +14,12 @@ class Signal(QThread):
     __condition_list: List[Tuple[Condition, OfferStock]]   # condition 목록
     __realtime_data_temp = None
     __stock: Stock = None     # 할당 받은 주식 종목
+    __money: int = None
 
-    def __init__(self, refresh_time, stock):
+    def __init__(self, refresh_time, stock, money):
         self.__refresh_time = refresh_time
         self.__stock = stock
+        self.__money = money
 
     def run(self):
         while True:
@@ -61,10 +63,10 @@ class Signal(QThread):
             # 조건 충족
             if offer == OfferStock.BUYING:
                 # 매수 조건일 때
-                Dao().buy_stock()
+                Dao().buy_stock(self.__stock, self.__money)
             else:
                 # 매도 조건일 때
-                Dao().sell_stock()
+                Dao().sell_stock(self.__stock)
 
     def _check_condition(self, index: int, realtime_data):
         '''
