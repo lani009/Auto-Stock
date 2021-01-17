@@ -71,4 +71,4 @@ class Signal(QThread):
         매도, 매수 조건에 맞는지 판별
         '''
         condition = self.__condition_list[index][0]
-        return (condition.condition_test(realtime_data), self.__condition_list[index][1])
+        return (condition.condition_test(self.__stock, realtime_data), self.__condition_list[index][1])

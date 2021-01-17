@@ -43,7 +43,7 @@ class MainWindow(QMainWindow):
         '''
         stock = Dao().load_stock()
         
-        self.stockNameLabel.setText(stock.get_str_name)
+        self.stockNameLabel.setText(stock.get_str_name())
     
     @pyqtSlot()
     def show_now_price(self):

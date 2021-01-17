@@ -1,4 +1,5 @@
 from abc import ABCMeta, abstractmethod
+from python.src.AutoStock.entity.stock import Stock
 from typing import List
 from request.enum.stockEnum import RealTimeDataEnum
 
@@ -11,7 +12,7 @@ class Condition(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def condition_test(self, realtime_data: dict) -> bool:
+    def condition_test(self, stock: Stock, realtime_data: dict) -> bool:
         """
         조건 검색 실행
         """
