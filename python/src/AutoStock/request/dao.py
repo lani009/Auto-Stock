@@ -18,7 +18,7 @@ class Dao():
 
     키움 API Data Access Object 클래스
     '''
-    __request_queue = queue.Queue(maxsize=1)    # size를 1로 막아두어, 하나 이상의 요청이 들어올 경우 해당 스레드는 blocking 되게함
+    __request_queue = queue.Queue(maxsize=10)    # size를 1로 막아두어, 하나 이상의 요청이 들어올 경우 해당 스레드는 blocking 되게함
     __kiwoom_obj: Kiwoom
     __realtime_data_list: List[Tuple[Callable, List[RealTimeDataEnum], Stock]]     # 현재 reg 되어 있는 realtime data 들의 목록
     __thread_executor = concurrent.futures.ThreadPoolExecutor(max_workers=30)   # 실시간 데이터 Condition 검증 처리용 스레드풀
@@ -166,6 +166,8 @@ class Dao():
         prc_data.insert(len(prc_data.columns), "ma20", prc_data.close.rolling(20).mean())
         prc_data.insert(len(prc_data.columns), "ma60", prc_data.close.rolling(60).mean())
 
+        self.__request_queue.get(0)
+
         return prc_data
 
     def reg_realtime_data(self, callback: Callable, stock: Stock, realtimeDataList: List[RealTimeDataEnum]):
@@ -247,12 +249,15 @@ class Dao():
         '''
         self.__request_queue.put(0)
         stock_code_list = self.__kiwoom_obj.get_condition_stock("3000", cond_name, index)   # 종목 코드 리스트
+        print(stock_code_list)
 
         stock_list = []     # Stock 객체 리스트
 
         for stock_code in stock_code_list:
+            self.__request_queue.get()
             stock_list.append(self.request_stock_instance(stock_code))
-            time.sleep(0.168)   # QoS 안걸리는 최적의 숫자!
+            self.__request_queue.put(0)
+            time.sleep(1.7)   # QoS 안걸리는 최적의 숫자!
 
         self.__request_queue.get()
         return stock_list

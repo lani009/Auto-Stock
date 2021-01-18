@@ -21,15 +21,20 @@ class FifteenBottom(Algorithm):
 
     @staticmethod
     def filter_list() -> list:
+       
         condition_list = Dao().request_condition_list()
-
+      
         ready_stock = []
-
+        stock_list = []
         for condition in condition_list:
-            if condition[1] == "fifteen_bottom":
+            if condition[1] == 'fifteen_bottom':
                 stock_list: List[Stock] = Dao().request_condition_stock(condition[0], condition[1])
+                print(stock_list)
+                break
+
         for stock in stock_list:
             data = Dao().request_candle_data_from_now(stock, CandleUnit.MINUTE, 30)  #한번만 검색하면됨.
+            
             if data.loc[0].percentage >= 3:
                 ready_stock.append(stock)
                 Dao().set_buying_price(stock, data.loc[0].open)
@@ -49,6 +54,7 @@ class FifteenBottom(Algorithm):
             buying_price = Dao().request_buying_price(stock)
             if current_price == buying_price:
                 # Dao().store_stock(stock)
+                print("a")
                 return True
             return False
 
@@ -72,6 +78,7 @@ class FifteenBottom(Algorithm):
             elif data.loc[0].close < buying_price:
                 # 손절
                 # Dao().delete_stock()
+                
                 return True
             return False
 

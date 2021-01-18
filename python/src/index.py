@@ -17,9 +17,10 @@ class MainRunner():
         Dao().set_server_msg_callback(self.echo)
 
     def run_program(self):
-        filtered_stock_list = FifteenBottom.filter_list()
-        for stock in filtered_stock_list:
-            self.__algorithm_runner.register_algorithm(FifteenBottom, stock)
+        # filtered_stock_list = FifteenBottom.filter_list()
+        print("스레드 감시")
+        # for stock in filtered_stock_list:
+        self.__algorithm_runner.register_algorithm(FifteenBottom, Dao().request_stock_instance("097800"))
 
         return
 

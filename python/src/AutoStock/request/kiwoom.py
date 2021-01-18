@@ -1,3 +1,4 @@
+import time
 from typing import Any, Callable, Dict, List, Tuple
 from AutoStock.request.enum.stockEnum import RealTimeDataEnum, TrCode, TrClassification
 from AutoStock.request.enum.errCode import ErrCode
@@ -68,13 +69,15 @@ class Kiwoom(QAxWidget):
         '''
         self.__tr_rq_single_data = rqSingleData
         self.__tr_rq_multi_data = rqMultiData
-
+        print("set input value{}".format(inputValue))
         self._set_input_values(inputValue)   # inputvalue 대입
+
         r_value = self.dynamicCall("CommRqData(Qstring, QString, int, QString)",
                          trEnum.value, trEnum.name, nPrevNext, sScrNo)
 
         print(ErrCode(r_value))     # dynamic call 반환 값 출력
-        self.__global_eventloop.exec_()
+        if not self.__global_eventloop.isRunning():
+            self.__global_eventloop.exec_()
         return self.__tr_data_temp
 
     def get_condition_list(self):
@@ -106,7 +109,7 @@ class Kiwoom(QAxWidget):
         Stock 객체들의 리스트를 반환한다.
         '''
         r_value = self.dynamicCall("SendCondition(QString, QString, int, int)", sScrNo, cond_name, index, 0)
-        print(ErrCode(r_value))     # dynamic call 반환 값 출력
+        # print(ErrCode(r_value))     # dynamic call 반환 값 출력
         self.__global_eventloop.exec_()
         return self.__condition_stock_list
 
@@ -224,6 +227,8 @@ class Kiwoom(QAxWidget):
                 m_data_dict_temp[m_data] = self.dynamicCall(
                     "GetCommData(QString, QString, int, QString)", sTrCode, sRQName, i, m_data)
             self.__tr_data_temp["multi_data"].append(m_data_dict_temp)
+
+        time.sleep(1)
         self.__global_eventloop.exit()
 
     def _realtime_data_slot(self, sCode, sRealType, sRealData):
@@ -241,6 +246,8 @@ class Kiwoom(QAxWidget):
         SendCondition 처리용 슬롯
         '''
         self.__condition_stock_list = sCodeList[:-1].split(";")
+        time.sleep(1)
+        
         self.__global_eventloop.exit()
 
     def _condition_ver_slot(self, _lRet, _sMsg):
@@ -253,6 +260,8 @@ class Kiwoom(QAxWidget):
 
         for cond_index_name in condition_name_list[:-1].split(";"):
             self.__condition_name_list.append(cond_index_name.split("^"))
+        time.sleep(1)
+        
 
         self.__global_eventloop.exit()
 
