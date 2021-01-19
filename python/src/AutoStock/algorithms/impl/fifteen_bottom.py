@@ -1,5 +1,6 @@
-from typing import Any, Dict, List
+import logging
 from copy import deepcopy
+from typing import Any, Dict, List
 
 from AutoStock.algorithms.algorithm import Algorithm
 from AutoStock.algorithms.condition import Condition
@@ -24,10 +25,16 @@ class FifteenBottom(Algorithm):
         condition_list = Dao().request_condition_list()
 
         ready_stock = []
+        stock_list = []
 
         for condition in condition_list:
             if condition[1] == "fifteen_bottom":
                 stock_list: List[Stock] = Dao().request_condition_stock(condition[0], condition[1])
+
+        if stock_list.__len__() == 0:
+            logging.warning("Condition Stock 로드 실패. 조건식 검색 결과, 총 0개의 종목이 검색되었습니다.")
+        logging.info("Condtion Stock: %s", [stock.get_str_name() for stock in stock_list])
+
         for stock in stock_list:
             data = Dao().request_candle_data_from_now(stock, CandleUnit.MINUTE, 30)  #한번만 검색하면됨.
             if data.loc[0].percentage >= 3:
@@ -36,7 +43,7 @@ class FifteenBottom(Algorithm):
         return deepcopy(ready_stock)
 
     def moderate_selling(self):
-        return super().moderate_selling()
+        pass
 
     class FifteenBottom_BuyingCondition(Condition):
         def condition_test(self, stock: Stock, realtime_data: Dict[RealTimeDataEnum, Any]):

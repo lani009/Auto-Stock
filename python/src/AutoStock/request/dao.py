@@ -1,15 +1,16 @@
 import concurrent.futures
+import logging
 import queue
 import time
 from datetime import datetime
 from typing import Callable, Dict, List, Tuple, Union
 
 from AutoStock.entity.stock import Stock
-from pandas import DataFrame
-
-from AutoStock.request.enum.stockEnum import (CandleUnit, OrderType, RealTimeDataEnum,
-                                    TrClassification, TrCode)
+from AutoStock.request.enum.stockEnum import (CandleUnit, OrderType,
+                                              RealTimeDataEnum,
+                                              TrClassification, TrCode)
 from AutoStock.request.kiwoom import Kiwoom
+from pandas import DataFrame
 
 
 class Dao():
@@ -46,8 +47,13 @@ class Dao():
     def login(self):
         self.__kiwoom_obj.do_login()
 
+    def request_accno(self) -> str:
+        if self.__accno is None:
+            self.__accno = self.__kiwoom_obj.get_account_info()
+        return self.__accno
+
     def request_tr_data(self, input_value: dict, trEnum: TrCode, nPrevNext: int, sScreenNo: str,
-                        rqSingleData: Dict[str, str], rqMultiData: Dict[str, str]):
+                        rqSingleData: Dict[str, str], rqMultiData: Dict[str, str], inner_invocation=False):
         '''
         키움 서버에 tr 데이터를 요청한다.
 
@@ -74,9 +80,11 @@ class Dao():
 
         SetInputValue("거래량구분", "입력값 3");
         '''
-        self.__request_queue.put(0)
+        if not inner_invocation:
+            self.__request_queue.put(0)
         data = self.__kiwoom_obj.get_tr_data(input_value, trEnum, nPrevNext, sScreenNo, rqSingleData, rqMultiData)
-        self.__request_queue.get()
+        if not inner_invocation:
+            self.__request_queue.get()
         return data
 
     def request_candle_data(self, stock, unit, tick: int) -> DataFrame:
@@ -100,7 +108,7 @@ class Dao():
         '''
         raise NotImplementedError()
 
-    def request_candle_data_from_now(self, stock: Stock, unit: CandleUnit, tick: int) -> DataFrame:
+    def request_candle_data_from_now(self, stock: Stock, unit: CandleUnit, tick: int, inner_invocation=False) -> DataFrame:
         '''
         키움 서버에 봉 차트 데이터를 요청한다.
 
@@ -110,29 +118,34 @@ class Dao():
 
         tick: 틱 단위
         '''
-        self.__request_queue.put(0)
+        if not inner_invocation:
+            self.__request_queue.put(0)
 
+        logging.debug("\nRequest candle data")
         data = None
         if unit == CandleUnit.DAY:
             data = self.__kiwoom_obj.get_tr_data({
                 "종목코드": stock.get_code_name(),
                 "기준일자": tick,
                 "수정주가구분": 0
-            }, TrCode.OPT10081, 0, 2000, [], ["일자", "시가", "현재가", "저가", "고가", "거래량"])
+            }, TrCode.OPT10081, 0, "1001", [], ["일자", "시가", "현재가", "저가", "고가", "거래량"])
 
         elif unit == CandleUnit.MINUTE:
             data = self.__kiwoom_obj.get_tr_data({
                 "종목코드": stock.get_code_name(),
                 "틱범위": tick,
                 "수정주가구분": 0
-            }, TrCode.OPT10080, 0, 2000, [], ["체결시간", "시가", "현재가", "저가", "고가", "거래량"])
+            }, TrCode.OPT10080, 0, "1001", [], ["체결시간", "시가", "현재가", "저가", "고가", "거래량"])
 
         elif unit == CandleUnit.TICK:
             data = self.__kiwoom_obj.get_tr_data({
                 "종목코드": stock.get_code_name(),
                 "틱범위": tick,
                 "수정주가구분": 0
-            }, TrCode.OPT10079, 0, 2000, [], ["체결시간", "시가", "현재가", "저가", "고가", "거래량"])
+            }, TrCode.OPT10079, 0, "1001", [], ["체결시간", "시가", "현재가", "저가", "고가", "거래량"])
+
+        if not inner_invocation:
+            self.__request_queue.get()
 
         if unit == CandleUnit.MINUTE or unit == CandleUnit.TICK:
 
@@ -168,7 +181,7 @@ class Dao():
 
         return prc_data
 
-    def reg_realtime_data(self, callback: Callable, stock: Stock, realtimeDataList: List[RealTimeDataEnum]):
+    def reg_realtime_data(self, callback: Callable, stock: Stock, realtimeDataList: List[RealTimeDataEnum], inner_invocation=False):
         '''
         해당 주식의 실시간 데이터 처리 콜백을 등록한다.
 
@@ -180,12 +193,14 @@ class Dao():
 
         realtimeDataList: 필요로 하는 실시간 데이터 목록
         '''
-        self.__request_queue.put(0)
+        if not inner_invocation:
+            self.__request_queue.put(0)
         self.__realtime_data_list.append((callback, realtimeDataList, stock))     # 실시간 데이터 처리 목록에 추가
         self.__kiwoom_obj.set_realtime_reg(2000, [stock.get_code_name()], realtimeDataList)
-        self.__request_queue.get()
+        if not inner_invocation:
+            self.__request_queue.get()
 
-    def request_condition_list(self) -> List[Tuple[str, str]]:
+    def request_condition_list(self, inner_invocation=False) -> List[Tuple[str, str]]:
         '''
         조건식 목록을 반환한다.
 
@@ -197,9 +212,15 @@ class Dao():
             ...
         ]
         '''
-        return self.__kiwoom_obj.get_condition_list()
+        if not inner_invocation:
+            self.__request_queue.put(0)
+        condition_list = self.__kiwoom_obj.get_condition_list()
 
-    def request_stock_instance(self, stock_code: str) -> Stock:
+        if not inner_invocation:
+            self.__request_queue.get()
+        return condition_list
+
+    def request_stock_instance(self, stock_code: str, inner_invocation=False) -> Stock:
         '''
         종목 코드에 해당하는 Stock 객체를 반환한다.
 
@@ -207,9 +228,14 @@ class Dao():
         ---------
         stock_code: 종목 코드
         '''
-        self.__request_queue.put(0)
-        tr_data = self.__kiwoom_obj.get_tr_data({"종목코드": stock_code}, TrCode.OPT10001,
-                                                0, 3000, ["종목명", "PER", "PBR"], [])
+        logging.debug("Request Stock instance %s", stock_code)
+        if not inner_invocation:
+            self.__request_queue.put(0)
+        tr_data = self.request_tr_data({"종목코드": stock_code}, TrCode.OPT10001,
+                                                0, "1002", ["종목명", "PER", "PBR"], [], inner_invocation=True)
+        if not inner_invocation:
+            self.__request_queue.get()
+
         stock_obj = Stock(tr_data["single_data"]["종목명"], stock_code)
 
         if not tr_data["single_data"]["PER"]:
@@ -224,10 +250,9 @@ class Dao():
         else:
             stock_obj.set_pbr(float(tr_data["single_data"]["PBR"]))
 
-        self.__request_queue.get()
         return stock_obj
 
-    def request_condition_stock(self, index: Union[int, str], cond_name: str) -> List[Stock]:
+    def request_condition_stock(self, index: Union[int, str], cond_name: str, inner_invocation=False) -> List[Stock]:
         '''
         1초에 5개 정도의 주식만 불러올 수 있으니 주의!!!!!
         =================
@@ -245,19 +270,21 @@ class Dao():
         [Stock, Stock, ...]
         Stock 객체를 list로 wrapping하여 반환한다.
         '''
-        self.__request_queue.put(0)
+        if not inner_invocation:
+            self.__request_queue.put(0)
         stock_code_list = self.__kiwoom_obj.get_condition_stock("3000", cond_name, index)   # 종목 코드 리스트
 
         stock_list = []     # Stock 객체 리스트
 
         for stock_code in stock_code_list:
-            stock_list.append(self.request_stock_instance(stock_code))
+            stock_list.append(self.request_stock_instance(stock_code, inner_invocation=True))
             time.sleep(0.168)   # QoS 안걸리는 최적의 숫자!
 
-        self.__request_queue.get()
+        if not inner_invocation:
+            self.__request_queue.get()
         return stock_list
 
-    def buy_stock(self, stock: Stock, money: int):
+    def buy_stock(self, stock: Stock, money: int, inner_invocation=False):
         '''매수
 
         Parameters
@@ -268,6 +295,8 @@ class Dao():
         money :
             금액
         '''
+        if not inner_invocation:
+            self.__request_queue.put(0)
         stock_current_price = self.__kiwoom_obj.get_tr_data({
             "종목코드": stock.get_code_name()
         }, TrCode.OPT10001, 0, 2000, ["현재가"], [])["현재가"]
@@ -275,9 +304,12 @@ class Dao():
         self.__kiwoom_obj.send_order(2000, self.__accno, OrderType.BUY, stock.get_code_name(),
                                      stock_n, 0, TrClassification.BEST_FOK, 0)
 
+        if not inner_invocation:
+            self.__request_queue.get()
+
         self.__bought_stock_list.append((stock, stock_current_price, stock_n))
 
-    def sell_stock(self, stock: Stock):
+    def sell_stock(self, stock: Stock, inner_invocation=False):
         '''전액 매도
 
         Parameters
@@ -288,16 +320,20 @@ class Dao():
         if stock_found is None:
             raise RuntimeError("해당 주식을 매수한 적이 없음.")
 
+        if not inner_invocation:
+            self.__request_queue.put(0)
         self.__kiwoom_obj.send_order(2000, self.__accno, OrderType.SELL, stock.get_code_name(),
                                      stock_found[2], 0, TrClassification.BEST_FOK, 0)
+        if not inner_invocation:
+            self.__request_queue.get()
 
     def set_buying_price(self, stock, price: int):
         '''매수 할 가격
 
         Parameters
         ----------
-        stock :
-        price :
+        stock
+        price
         '''
         self.__buying_price_dict.setdefault(stock, price)
 
@@ -347,7 +383,7 @@ class Dao():
 
         return data
 
-    
+
     def get_today_date(self) -> str:
         '''
         당일의 날짜를 yyyymmdd로 반환한다.
@@ -369,7 +405,8 @@ class Dao():
         self.__chejan_data_callback(data)
 
     def _realtime_data_processor(self, sCode: str, _sRealType, _sRealData):
-        stock = self.request_stock_instance(sCode)
+        logging.debug("Realtime Data Processing. %s with data %s\ndata: %s", sCode, _sRealType, _sRealData)
+        stock = self.request_stock_instance(sCode, inner_invocation=True)
         for realtime_list in self.__realtime_data_list:
             if realtime_list[2] == stock:
                 realtime_data = self.__kiwoom_obj.parse_realtime(sCode, realtime_list[1])

@@ -1,0 +1,65 @@
+DEBUG:root:Request Stock instance 000050
+DEBUG:root:tr_data call {'종목코드': '000050'}, 주식기본정보요청
+DEBUG:root:tr data received! 주식기본정보요청
+DEBUG:root:
+Request candle data
+DEBUG:root:tr_data call {'종목코드': '000050', '틱범위': 15, '수정주가구분': 0}, 주식분봉차트조회요청
+DEBUG:root:tr data received! 주식분봉차트조회요청
+DEBUG:root:
+Request candle data
+DEBUG:root:tr_data call {'종목코드': '000050', '틱범위': 15, '수정주가구분': 0}, 주식분봉차트조회요청
+DEBUG:root:tr data received! 주식분봉차트조회요청
+DEBUG:root:
+Request candle data
+DEBUG:root:tr_data call {'종목코드': '000050', '틱범위': 15, '수정주가구분': 0}, 주식분봉차트조회요청
+DEBUG:root:tr data received! 주식분봉차트조회요청
+DEBUG:root:
+Request candle data
+DEBUG:root:tr_data call {'종목코드': '000050', '틱범위': 15, '수정주가구분': 0}, 주식분봉차트조회요청
+DEBUG:root:tr data received! 주식분봉차트조회요청
+DEBUG:root:
+Request candle data
+DEBUG:root:tr_data call {'종목코드': '000050', '틱범위': 15, '수정주가구분': 0}, 주식분봉차트조회요청
+DEBUG:root:tr data received! 주식분봉차트조회요청
+DEBUG:root:
+Request candle data
+DEBUG:root:tr_data call {'종목코드': '000050', '틱범위': 15, '수정주가구분': 0}, 주식분봉차트조회요청
+DEBUG:root:tr data received! 주식분봉차트조회요청
+DEBUG:root:
+Request candle data
+DEBUG:root:tr_data call {'종목코드': '000050', '틱범위': 15, '수정주가구분': 0}, 주식분봉차트조회요청
+DEBUG:root:tr data received! 주식분봉차트조회요청
+DEBUG:root:
+Request candle data
+DEBUG:root:tr_data call {'종목코드': '000050', '틱범위': 15, '수정주가구분': 0}, 주식분봉차트조회요청
+DEBUG:root:tr data received! 주식분봉차트조회요청
+DEBUG:root:
+Request candle data
+DEBUG:root:tr_data call {'종목코드': '000050', '틱범위': 15, '수정주가구분': 0}, 주식분봉차트조회요청
+DEBUG:root:tr data received! 주식분봉차트조회요청
+DEBUG:root:
+Request candle data
+DEBUG:root:tr_data call {'종목코드': '000050', '틱범위': 15, '수정주가구분': 0}, 주식분봉차트조회요청
+DEBUG:root:tr data received! 주식분봉차트조회요청
+DEBUG:root:
+Request candle data
+DEBUG:root:tr_data call {'종목코드': '000050', '틱범위': 15, '수정주가구분': 0}, 주식분봉차트조회요청
+DEBUG:root:tr data received! 주식분봉차트조회요청
+DEBUG:root:
+Request candle data
+DEBUG:root:tr_data call {'종목코드': '000050', '틱범위': 30, '수정주가구분': 0}, 주식분봉차트조회요청
+DEBUG:root:tr data received! 주식분봉차트조회요청
+DEBUG:root:Request Stock instance 139480
+DEBUG:root:tr_data call {'종목코드': '139480'}, 주식기본정보요청
+DEBUG:root:tr data received! 주식기본정보요청
+DEBUG:root:
+Request candle data
+DEBUG:root:tr_data call {'종목코드': '139480', '틱범위': 30, '수정주가구분': 0}, 주식분봉차트조회요청
+DEBUG:root:tr data received! 주식분봉차트조회요청
+DEBUG:root:Request Stock instance 139480
+DEBUG:root:tr_data call {'종목코드': '139480'}, 주식기본정보요청
+DEBUG:root:tr data received! 주식기본정보요청
+DEBUG:root:
+Request candle data
+DEBUG:root:tr_data call {'종목코드': '139480', '틱범위': 30, '수정주가구분': 0}, 주식분봉차트조회요청
+DEBUG:root:tr data received! 주식분봉차트조회요청

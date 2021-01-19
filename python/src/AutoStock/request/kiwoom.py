@@ -1,3 +1,4 @@
+import logging
 from typing import Any, Callable, Dict, List, Tuple
 from AutoStock.request.enum.stockEnum import RealTimeDataEnum, TrCode, TrClassification
 from AutoStock.request.enum.errCode import ErrCode
@@ -19,6 +20,7 @@ class Kiwoom(QAxWidget):
     '''
 
     __global_eventloop: QEventLoop = None               # 동기처리를 위한 전역 EventLoop
+    __realtime_eventloop: QEventLoop = None             # 실시간 데이터 처리를 위한 이벤트루프
     __tr_data_temp: Dict[str, Dict[str, str]] = None    # GetTrData의 결과가 임시적으로 담기는 곳
     __condition_name_list: List[Tuple[str, str]] = None        # 조건식 이름과 인덱스가 임시적으로 담기는 곳
     __condition_stock_list: List[str] = None            # 조건식 필터링 결과가 임시적으로 담기는 곳
@@ -32,11 +34,17 @@ class Kiwoom(QAxWidget):
         super().__init__()
         self.setControl("KHOPENAPI.KHOpenAPICtrl.1")
         self.__global_eventloop = QEventLoop()
+        self.__realtime_eventloop = QEventLoop()
         self.__reg_all_slot()     # 이벤트 슬롯 등록
 
     def do_login(self):
         self.dynamicCall("CommConnect()")
         self.__global_eventloop.exec_()
+        server = self.dynamicCall("GetLoginInfo(QString)", "GetServerGubun")
+        if server == "1":
+            print("로그인 성공\n[서버] 모의투자 서버 접속하였습니다.")
+        else:
+            print("로그인 성공\n[서버] 실서버 접속하였습니다.")
 
     def get_tr_data(self, inputValue: Dict[str, str], trEnum: TrCode, nPrevNext: int, sScrNo: str,
                     rqSingleData: Dict[str, str], rqMultiData: Dict[str, str]):
@@ -66,15 +74,15 @@ class Kiwoom(QAxWidget):
         -------
         Dict[str, Dict[str, str]]
         '''
+        logging.debug("tr_data call %s, %s", inputValue, trEnum.value)
         self.__tr_rq_single_data = rqSingleData
         self.__tr_rq_multi_data = rqMultiData
 
         self._set_input_values(inputValue)   # inputvalue 대입
-        r_value = self.dynamicCall("CommRqData(Qstring, QString, int, QString)",
+        self.dynamicCall("CommRqData(Qstring, QString, int, QString)",
                          trEnum.value, trEnum.name, nPrevNext, sScrNo)
-
-        print(ErrCode(r_value))     # dynamic call 반환 값 출력
         self.__global_eventloop.exec_()
+        self.screen_cancle(sScrNo)
         return self.__tr_data_temp
 
     def get_condition_list(self):
@@ -84,7 +92,7 @@ class Kiwoom(QAxWidget):
         -------
         (index, name)의 리스트를 반환한다.
         '''
-        r_value = self.dynamicCall("GetConditionLoad()")
+        self.dynamicCall("GetConditionLoad()")
         # print(ErrCode(r_value))     # dynamic call 반환 값 출력
         self.__global_eventloop.exec_()
         return self.__condition_name_list
@@ -116,7 +124,7 @@ class Kiwoom(QAxWidget):
 
         Parameters
         ----------
-        stockList : Stock 객체가 list 형태로 들어와야함
+        stockList : 종목코드가 list 형태로 들어와야함
 
         realTimeDataList : RealTimeDataEnum 객체가 list 형태로 들어와야함
         '''
@@ -192,8 +200,11 @@ class Kiwoom(QAxWidget):
 
     def get_account_info(self):
         account_list = self.dynamicCall("GetLoginInfo(QString)", "ACCNO")
-        account_num = account_list.split(';')[0]
+        account_num = account_list.split(";")[0]
         return account_num
+
+    def screen_cancle(self, sScrNo: str):
+        self.dynamicCall("DisconnectRealData(QString)", sScrNo)
 
 
     def _set_input_values(self, input_value: Dict[str, str]):
@@ -208,9 +219,8 @@ class Kiwoom(QAxWidget):
         CommRqData 처리용 슬롯
         '''
         _ = (sScrNo, sPrevNext)     # warning avoid
-
+        logging.debug("tr data received! %s", sRQName)
         n_record = self.dynamicCall("GetRepeatCnt(QString, QString)", sTrCode, sRQName)  # tr데이터 중, 멀티데이터의 레코드 개수를 받아옴.
-
         self.__tr_data_temp = {}     # 이전에 저장되어 있던 임시 tr_data 삭제.
         self.__tr_data_temp["single_data"] = {}     # empty dict 선언
         for s_data in self.__tr_rq_single_data:

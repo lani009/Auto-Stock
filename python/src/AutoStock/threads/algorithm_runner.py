@@ -1,4 +1,5 @@
 import copy
+import logging
 from typing import List
 from AutoStock.entity.stock import Stock
 from AutoStock.algorithms.algorithm import Algorithm
@@ -42,6 +43,8 @@ class AlgoritmRunner():
         algorithm_param = algorithm(stock)          # 알고리즘 객체 생성
         algorithm_param.start_algorithm_thread()    # 알고리즘 스레드 실행
         self.__algorithm_list.append(algorithm_param)  # 알고리즘 리스트에 추가
+
+        logging.info("algorithm start. %s %s", algorithm.__class__, stock.get_str_name())
 
     def get_algorithm_list(self) -> List[Algorithm]:
         '''
